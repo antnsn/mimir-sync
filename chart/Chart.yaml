@@ -23,9 +23,9 @@ home: https://github.com/antnsn/mimir-sync
 
 # The URL to the project's documentation
 maintainers:
-  - name: Your Name
-    url: https://github.com/yourusername
-    email: your.email@example.com
+  - name: antnsn
+    url: https://github.com/antnsn
+    email: me@antnsn.dev
 
 # The license for the project
 icon: https://raw.githubusercontent.com/antnsn/mimir-sync/main/assets/logo/logo.svg
@@ -89,7 +89,8 @@ tolerations: []
 topologySpreadConstraints: []
 
 # Pod disruption budget
-podDisruptionBudget: {}
+podDisruptionBudget:
+  {}
   # minAvailable: 1
   # maxUnavailable: 1
 

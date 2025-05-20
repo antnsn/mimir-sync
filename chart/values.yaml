@@ -131,7 +131,7 @@ alertmanagerConfig: |
   receivers:
     - name: "someReceiver"
       webhook_configs:
-        - url: "https://keep.local.antnsn.dev/v2/alerts/event/prometheus?provider_id=1a13103d7e4143f4ab459fa6e2c94a20"
+        - url: "https://someurl"
           send_resolved: true
           http_config:
             basic_auth:
