@@ -1,0 +1,176 @@
+{{- if .Values.rules.enabled }}
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ include "mimir-sync.fullname" . }}-rules-sync
+  labels:
+    {{- include "mimir-sync.labels" . | nindent 4 }}
+    app.kubernetes.io/component: rules-sync
+  annotations:
+    {{- if ne .Values.rules.config.type "none" }}
+    reloader.stakater.com/auto: "true"
+    {{- if eq .Values.rules.config.type "configmap" }}
+    reloader.stakater.com/search: "true"
+    {{- end }}
+    {{- end }}
+spec:
+  template:
+    metadata:
+      labels:
+        {{- include "mimir-sync.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: rules-sync
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "mimir-sync.serviceAccountName" . }}
+      restartPolicy: OnFailure
+      containers:
+        - name: rules-sync
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          {{- with .Values.pod.resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          command:
+            - /bin/sh
+            - -c
+            - |
+              # Create directory for rules
+              mkdir -p /tmp/rules
+
+              # Copy all rule files from ConfigMap/Secret with explicit file handling
+              echo "Copying rule files from {{ if eq .Values.rules.config.type "configmap" }}ConfigMap{{ else }}Secret{{ end }}..."
+              for src_file in /rules/*; do
+                if [ -f "$src_file" ]; then
+                  filename=$(basename "$src_file")
+                  echo "Copying $src_file to /tmp/rules/$filename"
+                  cat "$src_file" > "/tmp/rules/$filename"
+                  
+                  # Verify the file was copied
+                  if [ -f "/tmp/rules/$filename" ]; then
+                    echo "Successfully copied $filename"
+                    echo "Content of /tmp/rules/$filename (first 100 chars):"
+                    head -c 100 "/tmp/rules/$filename"
+                    echo -e "\n... (truncated)"
+                  else
+                    echo "Failed to copy $filename"
+                    exit 1
+                  fi
+                fi
+              done
+              
+              # Verify the files exist
+              echo "Contents of /rules/:"
+              ls -la /rules/
+              echo "Contents of /tmp/rules/:"
+              ls -la /tmp/rules/
+              if [ ! "$(ls -A /tmp/rules/)" ]; then
+                echo "Error: No rule files found in /tmp/rules/"
+                exit 1
+              fi
+              
+              # Log the rules directory for debugging
+              echo "Syncing rules from /tmp/rules to Mimir..."
+              
+              # Run mimirtool to sync the rules
+              echo "Running mimirtool to sync rules..."
+              
+              # Process each rule file individually
+              for rule_file in /tmp/rules/*.yml /tmp/rules/*.yaml; do
+                [ -f "$rule_file" ] || continue
+                echo "Processing rule file: $rule_file"
+                
+                # Verify the rule file before syncing
+                echo "Verifying rule file: $rule_file"
+                mimirtool rules check "$rule_file"
+                
+                # Sync the verified rule file
+                echo "Syncing verified rule file: $rule_file"
+                mimirtool rules sync "$rule_file" \
+                  --address="{{ .Values.mimir.address }}" \
+                  --id="{{ .Values.mimir.tenantId }}"
+                  {{- if .Values.mimir.user }}
+                  --user="{{ .Values.mimir.user }}"
+                  {{- end }}
+                  {{- if .Values.mimir.password }}
+                  --key="{{ .Values.mimir.password }}"
+                  {{- end }}
+                
+                # Check the exit code
+                RESULT=$?
+                if [ $RESULT -ne 0 ]; then
+                  echo "Error: mimirtool failed with exit code $RESULT for file $rule_file"
+                  exit $RESULT
+                else
+                  echo "Successfully synced $rule_file"
+                fi
+              done
+              
+              echo "Successfully synced all rules"
+          {{- if ne .Values.rules.config.type "none" }}
+          volumeMounts:
+            - name: rules-config
+              mountPath: /rules
+              readOnly: true
+          {{- end }}
+          {{- with .Values.pod.volumeMounts }}
+            {{- toYaml . | nindent 10 }}
+          {{- end }}
+          env:
+            - name: MIMIR_ADDRESS
+              value: "{{ .Values.mimir.address }}"
+            - name: MIMIR_TENANT_ID
+              value: "{{ .Values.mimir.tenantId }}"
+            {{- if .Values.mimir.user }}
+            - name: MIMIR_USER
+              value: "{{ .Values.mimir.user }}"
+            {{- end }}
+            {{- if .Values.mimir.password }}
+            - name: MIMIR_PASSWORD
+              value: "{{ .Values.mimir.password }}"
+            {{- end }}
+            {{- with .Values.pod.env }}
+              {{- toYaml . | nindent 12 }}
+            {{- end }}
+      {{- with .Values.pod.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.pod.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.pod.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.pod.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.pod.topologySpreadConstraints }}
+      topologySpreadConstraints:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- if ne .Values.rules.config.type "none" }}
+      volumes:
+        - name: rules-config
+          {{- if eq .Values.rules.config.type "configmap" }}
+          configMap:
+            name: {{ if .Values.rules.config.existingName }}{{ .Values.rules.config.existingName }}{{ else }}{{ include "mimir-sync.fullname" . }}-rules{{ end }}
+          {{- else if eq .Values.rules.config.type "secret" }}
+          secret:
+            secretName: {{ if .Values.rules.config.existingName }}{{ .Values.rules.config.existingName }}{{ else }}{{ include "mimir-sync.fullname" . }}-rules-config{{ end }}
+          {{- end }}
+      {{- end }}
+      {{- with .Values.pod.volumes }}
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+  backoffLimit: 2
+  ttlSecondsAfterFinished: 3600  # Clean up completed jobs after 1 hour
+{{- end }}

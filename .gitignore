@@ -1,0 +1,46 @@
+# General
+.DS_Store
+Thumbs.db
+*.swp
+*~
+.idea/
+.vscode/
+*.iml
+
+# Kubernetes
+*.yaml.bak
+*.yaml.old
+.kubeconfig
+
+# Helm
+.chart/*
+*.tgz
+
+# Local development
+.helm/
+.helmignore
+
+# Backup files
+*.bak
+*.backup
+
+# Logs
+*.log
+
+# Local env files
+.env
+.env.local
+.env.*.local
+
+# Temporary files
+tmp/
+temp/
+
+# Editor directories and files
+.idea
+.vscode
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?

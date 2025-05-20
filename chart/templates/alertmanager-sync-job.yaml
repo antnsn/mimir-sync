@@ -1,0 +1,148 @@
+{{- if .Values.alertmanager.enabled }}
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ include "mimir-sync.fullname" . }}-alertmanager-sync
+  labels:
+    {{- include "mimir-sync.labels" . | nindent 4 }}
+    app.kubernetes.io/component: alertmanager-sync
+  annotations:
+    {{- if ne .Values.alertmanager.config.type "none" }}
+    reloader.stakater.com/auto: "true"
+    {{- if eq .Values.alertmanager.config.type "configmap" }}
+    reloader.stakater.com/search: "true"
+    {{- end }}
+    {{- end }}
+spec:
+  template:
+    metadata:
+      labels:
+        {{- include "mimir-sync.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: alertmanager-sync
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "mimir-sync.serviceAccountName" . }}
+      restartPolicy: OnFailure
+      containers:
+        - name: alertmanager-sync
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          {{- with .Values.pod.resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          command:
+            - /bin/sh
+            - -c
+            - |
+              # Get the alertmanager config from ConfigMap/Secret
+              CONFIG_FILE=/tmp/alertmanager-config.yml
+              echo "Copying config file from {{ if eq .Values.alertmanager.config.type "configmap" }}ConfigMap{{ else }}Secret{{ end }}..."
+              cat /config/{{ .Values.alertmanager.config.key }} > $CONFIG_FILE
+
+              # Verify the file exists and show contents
+              ls -la /config/
+              ls -la /tmp/
+              echo "Config file contents (first 100 chars):"
+              head -c 100 $CONFIG_FILE
+              echo -e "\n... (truncated)"
+
+              if [ ! -f "$CONFIG_FILE" ]; then
+                echo "Error: Config file not found at $CONFIG_FILE"
+                exit 1
+              fi
+
+              # Verify the alertmanager config before syncing
+              echo "Verifying $CONFIG_FILE before syncing..."
+              mimirtool alertmanager verify "$CONFIG_FILE"
+
+              # Log the config file path for debugging
+              echo "Syncing $CONFIG_FILE to Mimir..."
+
+              # Run mimirtool to load the alertmanager config
+              echo "Running mimirtool to load alertmanager config..."
+              mimirtool alertmanager load "$CONFIG_FILE" \
+                --address="{{ .Values.mimir.address }}" \
+                --id="{{ .Values.mimir.tenantId }}"
+                {{- if .Values.mimir.user }}
+                --user="{{ .Values.mimir.user }}"
+                {{- end }}
+                {{- if .Values.mimir.password }}
+                --key="{{ .Values.mimir.password }}"
+                {{- end }}
+                
+              # Check the exit code
+              RESULT=$?
+              if [ $RESULT -ne 0 ]; then
+                echo "Error: mimirtool failed with exit code $RESULT"
+                exit $RESULT
+              else
+                echo "Successfully loaded alertmanager config"
+              fi
+          {{- if ne .Values.alertmanager.config.type "none" }}
+          volumeMounts:
+            - name: alertmanager-config
+              mountPath: /config
+              readOnly: true
+          {{- end }}
+          {{- with .Values.pod.volumeMounts }}
+            {{- toYaml . | nindent 10 }}
+          {{- end }}
+          env:
+            - name: MIMIR_ADDRESS
+              value: "{{ .Values.mimir.address }}"
+            - name: MIMIR_TENANT_ID
+              value: "{{ .Values.mimir.tenantId }}"
+            {{- if .Values.mimir.user }}
+            - name: MIMIR_USER
+              value: "{{ .Values.mimir.user }}"
+            {{- end }}
+            {{- if .Values.mimir.password }}
+            - name: MIMIR_PASSWORD
+              value: "{{ .Values.mimir.password }}"
+            {{- end }}
+            {{- with .Values.pod.env }}
+              {{- toYaml . | nindent 12 }}
+            {{- end }}
+      {{- with .Values.pod.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.pod.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.pod.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.pod.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.pod.topologySpreadConstraints }}
+      topologySpreadConstraints:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- if ne .Values.alertmanager.config.type "none" }}
+      volumes:
+        - name: alertmanager-config
+          {{- if eq .Values.alertmanager.config.type "configmap" }}
+          configMap:
+            name: {{ if .Values.alertmanager.config.existingName }}{{ .Values.alertmanager.config.existingName }}{{ else }}{{ include "mimir-sync.fullname" . }}-alertmanager{{ end }}
+          {{- else if eq .Values.alertmanager.config.type "secret" }}
+          secret:
+            secretName: {{ if .Values.alertmanager.config.existingName }}{{ .Values.alertmanager.config.existingName }}{{ else }}{{ include "mimir-sync.fullname" . }}-alertmanager-config{{ end }}
+          {{- end }}
+      {{- end }}
+      {{- with .Values.pod.volumes }}
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+  backoffLimit: 2
+  ttlSecondsAfterFinished: 3600  # Clean up completed jobs after 1 hour
+{{- end }}

@@ -1,0 +1,235 @@
+# Default values for mimir-sync
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+# Image configuration
+image:
+  repository: grafana/mimirtool
+  tag: latest
+  pullPolicy: IfNotPresent
+
+# Global configuration
+global:
+  # A default name to use for the application
+  nameOverride: ""
+  # A default fullname to use for the application
+  fullnameOverride: ""
+  # Common labels to add to all resources
+  commonLabels: {}
+  # Common annotations to add to all resources
+  commonAnnotations: {}
+  # Create the Kubernetes namespace if it doesn't exist
+  createNamespace: true
+  # The namespace to install the release into
+  namespace: "mimir-sync"
+
+# RBAC configuration
+rbac:
+  # Specifies whether RBAC resources should be created
+  create: true
+
+# Service account configuration
+serviceAccount:
+  # Specifies whether a service account should be created
+  create: true
+  # Annotations to add to the service account
+  annotations: {}
+  # The name of the service account to use.
+  # If not set and create is true, a name is generated using the fullname template
+  name: ""
+
+# Mimir configuration
+mimir:
+  # Mimir API endpoint
+  address: http://mimir-distributed-nginx.mimir.svc.cluster.local:80
+  # Mimir tenant ID
+  tenantId: anonymous
+
+  # Mimir API authentication (optional)
+  # user: ""
+  # password: ""  # Can also be set via MIMIR_API_KEY environment variable
+
+# Alertmanager sync configuration
+alertmanager:
+  # Enable or disable Alertmanager sync
+  enabled: true
+
+  # Configuration for Alertmanager config
+  config:
+    # Type of resource to use for Alertmanager config (configmap, secret, or none)
+    type: configmap
+    # Name of an existing ConfigMap/Secret to use (leave empty to create a new one)
+    existingName: ""
+    # Key in the ConfigMap/Secret that contains the Alertmanager config
+    key: config.yml
+
+  # Path to the Alertmanager configuration file in the container
+  configPath: "/config/config.yml"
+
+  # Resource requests and limits
+  resources:
+    {}
+    # limits:
+    #   cpu: 100m
+    #   memory: 128Mi
+    # requests:
+    #   cpu: 50m
+    #   memory: 64Mi
+
+# Rules sync configuration
+rules:
+  # Enable or disable Rules sync
+  enabled: true
+
+  # Configuration for Rules config
+  config:
+    # Type of resource to use for Rules config (configmap, secret, or none)
+    type: configmap
+    # Name of an existing ConfigMap/Secret to use (leave empty to create a new one)
+    existingName: ""
+    # Key in the ConfigMap/Secret that contains the Rules config
+    key: rules.yml
+
+  # Mimir Ruler API URL
+  url: "http://mimir-ruler:8080"
+  # Path to the Rules configuration directory in the container
+  rulesPath: "/rules"
+
+  # Resource requests and limits
+  resources:
+    {}
+    # limits:
+    #   cpu: 100m
+    #   memory: 128Mi
+    # requests:
+    #   cpu: 50m
+    #   memory: 64Mi
+
+# Alertmanager configuration in YAML format
+alertmanagerConfig: |
+  global:
+    resolve_timeout: 5m
+  route:
+    group_by: ['alertname']
+    group_wait: 10s
+    group_interval: 5m
+    repeat_interval: 15m
+    receiver: someReceiver
+    routes:
+      - match:
+          severity: critical
+        receiver: someReceiver
+        group_wait: 10s
+        group_interval: 2m
+        repeat_interval: 5m
+      - match:
+          severity: warning
+        receiver: keep
+        group_wait: 10s
+        group_interval: 2m
+        repeat_interval: 5m
+  receivers:
+    - name: "someReceiver"
+      webhook_configs:
+        - url: "https://keep.local.antnsn.dev/v2/alerts/event/prometheus?provider_id=1a13103d7e4143f4ab459fa6e2c94a20"
+          send_resolved: true
+          http_config:
+            basic_auth:
+              username: someUsername
+              password: somePassword
+
+# Prometheus rules in YAML format
+prometheusRules:
+  node.yml: |
+    groups:
+      - name: node-exporter
+        rules:
+          - alert: NodeDown
+            expr: up{job=~"k8s-nodes|external-servers"} == 0
+            for: 2m
+            labels:
+              severity: critical
+            annotations:
+              summary: Node down (instance {{ $labels.instance }})
+              description: "Node is down or not responding\n  VALUE = {{ $value }}\n  LABELS = {{ $labels }}"
+          - alert: HighNodeLoad
+            expr: node_load1 > 5
+            for: 5m
+            labels:
+              severity: warning
+            annotations:
+              description: '{{ $labels.instance }} has high load (current value: {{ $value }})'
+              summary: High load on {{ $labels.instance }}
+          - alert: HostOutOfMemory
+            expr: node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes * 100 < 10
+            for: 5m
+            labels:
+              severity: warning
+            annotations:
+              summary: Host out of memory (instance {{ $labels.instance }})
+              description: "Node memory is filling up (< 10% left)\n  VALUE = {{ $value }}\n  LABELS = {{ $labels }}"
+          - alert: HostHighCpuLoad
+            expr: 100 - (avg by(instance) (rate(node_cpu_seconds_total{mode="idle"}[5m])) * 100) > 85
+            for: 10m
+            labels:
+              severity: warning
+            annotations:
+              summary: Host high CPU load (instance {{ $labels.instance }})
+              description: '{{ $labels.instance }} has high CPU load (current value: {{ $value }})'
+          - alert: HostOutOfDiskSpace
+            expr: (node_filesystem_avail_bytes{mountpoint="/"}  / node_filesystem_size_bytes{mountpoint="/"} * 100) < 10
+            for: 5m
+            labels:
+              severity: warning
+            annotations:
+              summary: Host out of disk space (instance {{ $labels.instance }})
+              description: "Disk is almost full (< 10% left)\n  VALUE = {{ $value }}\n  LABELS = {{ $labels }}"
+
+# Service account configuration
+serviceAccount:
+  # Specifies whether a service account should be created
+  create: true
+  # The name of the service account to use
+  name: ""
+  # Annotations to add to the service account
+  annotations: {}
+  # Image pull secrets that are attached to the service account
+  imagePullSecrets: []
+  # Automount API credentials for the service account
+  automountServiceAccountToken: true
+
+# Pod configuration
+pod:
+  # Security context for the pod
+  securityContext: {}
+  # Node selector for the pod
+  nodeSelector: {}
+  # Tolerations for the pod
+  tolerations: []
+  # Affinity rules for the pod
+  affinity: {}
+  # Additional pod labels
+  labels: {}
+  # Additional pod annotations
+  annotations: {}
+  # Pod topology spread constraints
+  topologySpreadConstraints: []
+  # Pod disruption budget
+  disruptionBudget:
+    # minAvailable: 1
+    # maxUnavailable: 1
+    {}
+  # Pod priority class name
+  priorityClassName: ""
+  # Additional volumes to add to the pod
+  volumes: []
+  # Additional volume mounts to add to the containers
+  volumeMounts: []
+  # Additional environment variables to set in the containers
+  env: []
+  # Additional init containers to add to the pod
+  initContainers: []
+  # Additional sidecar containers to add to the pod
+  sidecarContainers: []
+  # Service account token volume mount path
+  serviceAccountTokenVolumeMountPath: "/var/run/secrets/kubernetes.io/serviceaccount"

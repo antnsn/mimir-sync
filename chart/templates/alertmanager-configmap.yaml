@@ -1,0 +1,15 @@
+{{- if and (eq .Values.alertmanager.config.type "configmap") (not .Values.alertmanager.config.existingName) -}}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "mimir-sync.fullname" . }}-alertmanager
+  namespace: {{ .Values.namespace }}
+  labels:
+    app: {{ template "mimir-sync.name" . }}
+    chart: {{ template "mimir-sync.chart" . }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+data:
+  {{ .Values.alertmanager.config.key }}: |
+    {{- .Values.alertmanagerConfig | nindent 4 }}
+{{- end -}}

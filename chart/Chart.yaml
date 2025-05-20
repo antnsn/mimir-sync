@@ -1,0 +1,139 @@
+apiVersion: v2
+name: mimir-sync
+description: A Helm chart for syncing Mimir alertmanager config and Prometheus rules
+type: application
+version: 0.2.0
+appVersion: "1.0.0"
+
+# A list of keywords as strings
+keywords:
+  - monitoring
+  - alerting
+  - prometheus
+  - mimir
+  - kubernetes
+  - helm
+
+# The URL to the source code of this project
+sources:
+  - https://github.com/antnsn/mimir-sync
+
+# The URL to the project's homepage
+home: https://github.com/antnsn/mimir-sync
+
+# The URL to the project's documentation
+maintainers:
+  - name: Your Name
+    url: https://github.com/yourusername
+    email: your.email@example.com
+
+# The license for the project
+icon: https://raw.githubusercontent.com/antnsn/mimir-sync/main/assets/logo/logo.svg
+
+# Dependencies (if any)
+dependencies: []
+
+# These are the default values for the chart.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+# A default name to use for the application.
+nameOverride: ""
+# A default fullname to use for the application.
+fullnameOverride: ""
+
+# Common labels to add to all resources
+commonLabels: {}
+
+# Annotations to add to all resources
+commonAnnotations: {}
+
+# Create the Kubernetes namespace if it doesn't exist
+createNamespace: true
+
+# The namespace to install the release into
+namespace: "mimir-rules"
+
+# The name of the Kubernetes service account to use
+serviceAccount:
+  # Specifies whether a service account should be created
+  create: true
+  # The name of the service account to use.
+  # If not set and create is true, a name is generated using the fullname template
+  name: ""
+  # Annotations to add to the service account
+  annotations: {}
+  # Image pull secrets that are attached to the service account
+  imagePullSecrets: []
+
+# Pod security context
+podSecurityContext: {}
+
+# Security context for the container
+securityContext: {}
+
+# Affinity for pod assignment
+# ref: https://kubernetes.io/docs/concepts/configuration/assign-pod-node/#affinity-and-anti-affinity
+affinity: {}
+
+# Node labels for pod assignment
+# ref: https://kubernetes.io/docs/user-guide/node-selection/
+nodeSelector: {}
+
+# Tolerations for pod assignment
+# ref: https://kubernetes.io/docs/concepts/configuration/taint-and-toleration/
+tolerations: []
+
+# Pod topology spread constraints
+# ref: https://kubernetes.io/docs/concepts/workloads/pods/pod-topology-spread-constraints/
+topologySpreadConstraints: []
+
+# Pod disruption budget
+podDisruptionBudget: {}
+  # minAvailable: 1
+  # maxUnavailable: 1
+
+# Pod priority class name
+priorityClassName: ""
+
+# Additional environment variables to set in the containers
+env: []
+
+# Additional volume mounts to add to the containers
+volumeMounts: []
+
+# Additional volumes to add to the pods
+volumes: []
+
+# Additional init containers to add to the pods
+initContainers: []
+
+# Additional sidecar containers to add to the pods
+sidecarContainers: []
+
+# Additional volumes to add to the pods
+additionalVolumes: []
+
+# Additional volume mounts to add to the containers
+additionalVolumeMounts: []
+
+# Additional pod labels to add to the pods
+podLabels: {}
+
+# Additional pod annotations to add to the pods
+podAnnotations: {}
+
+# Additional service account annotations
+serviceAccountAnnotations: {}
+
+# Additional service account labels
+serviceAccountLabels: {}
+
+# Additional service account image pull secrets
+serviceAccountImagePullSecrets: []
+
+# Additional service account automount token
+serviceAccountAutomountToken: true
+
+# Additional service account token volume mount path
+serviceAccountTokenVolumeMountPath: "/var/run/secrets/kubernetes.io/serviceaccount"

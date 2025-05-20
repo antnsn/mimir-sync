@@ -1,0 +1,123 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mimir-rules-sync
+  namespace: mimir-rules
+  annotations:
+    reloader.stakater.com/auto: "true"
+    configmap.reloader.stakater.com/reload: "prometheus-rules"
+spec:
+  replicas: 1
+  revisionHistoryLimit: 0
+  selector:
+    matchLabels:
+      app: mimir-rules-sync
+  template:
+    metadata:
+      labels:
+        app: mimir-rules-sync
+    spec:
+      containers:
+        - name: mimir-rules-sync
+          image: curlimages/curl:latest
+          imagePullPolicy: IfNotPresent
+          resources:
+            limits:
+              cpu: 200m
+              memory: 256Mi
+            requests:
+              cpu: 100m
+              memory: 128Mi
+          command:
+            - /bin/sh
+            - -c
+            - |
+              # Download mimirtool
+              curl -fLo /tmp/mimirtool https://github.com/grafana/mimir/releases/latest/download/mimirtool-linux-amd64
+              chmod +x /tmp/mimirtool
+
+              # Create directory for rules
+              mkdir -p /tmp/rules
+
+              # Copy all rule files from ConfigMap with explicit file handling
+              echo "Copying rule files from ConfigMap..."
+              for src_file in /rules/*; do
+                if [ -f "$src_file" ]; then
+                  filename=$(basename "$src_file")
+                  echo "Copying $src_file to /tmp/rules/$filename"
+                  cat "$src_file" > "/tmp/rules/$filename"
+                  
+                  # Verify the file was copied
+                  if [ -f "/tmp/rules/$filename" ]; then
+                    echo "Successfully copied $filename"
+                    echo "Content of /tmp/rules/$filename:"
+                    cat "/tmp/rules/$filename"
+                  else
+                    echo "Failed to copy $filename"
+                    exit 1
+                  fi
+                fi
+              done
+
+              # Verify the files exist
+              echo "Contents of /rules/:"
+              ls -la /rules/
+              echo "Contents of /tmp/rules/:"
+              ls -la /tmp/rules/
+              if [ ! "$(ls -A /tmp/rules/)" ]; then
+                echo "Error: No rule files found in /tmp/rules/"
+                exit 1
+              fi
+
+              # Log the rules directory for debugging
+              echo "Syncing rules from /tmp/rules to Mimir..."
+
+              # Run mimirtool to sync the rules
+              echo "Running mimirtool to sync rules..."
+
+              # Process each rule file individually
+              for rule_file in /tmp/rules/*.yml; do
+                echo "Processing rule file: $rule_file"
+                
+                # Verify the rule file before syncing
+                echo "Verifying rule file: $rule_file"
+                verification_output=$(/tmp/mimirtool rules check "$rule_file" 2>&1)
+                VERIFY_RESULT=$?
+                
+                # Display verification results
+                if [ $VERIFY_RESULT -ne 0 ]; then
+                  echo "Error: Rule verification failed for $rule_file:"
+                  echo "$verification_output"
+                  exit $VERIFY_RESULT
+                else
+                  echo "Rule verification successful for $rule_file"
+                fi
+                
+                # Sync the verified rule file
+                echo "Syncing verified rule file: $rule_file"
+                /tmp/mimirtool rules sync "$rule_file" \
+                  --address="http://mimir-distributed-nginx.mimir" \
+                  --id=anonymous
+                  
+                # Check the exit code
+                RESULT=$?
+                if [ $RESULT -ne 0 ]; then
+                  echo "Error: mimirtool failed with exit code $RESULT for file $rule_file"
+                  exit $RESULT
+                else
+                  echo "Successfully synced $rule_file"
+                fi
+              done
+
+              echo "Successfully synced all rules"
+
+              # Sleep to keep the container running
+              echo "Rules sync completed, container will remain running to wait for ConfigMap changes"
+              while true; do sleep 3600; done
+          volumeMounts:
+            - name: rules-config
+              mountPath: /rules
+      volumes:
+        - name: rules-config
+          configMap:
+            name: prometheus-rules
