@@ -1,0 +1,16 @@
+# Artifact Hub repository metadata file
+# This file contains metadata for publishing the Helm chart to Artifact Hub
+
+# Repository ID from Artifact Hub (if you've already created one)
+# repositoryID: ""
+
+# Repository owners (for claiming ownership on Artifact Hub)
+owners:
+  - name: antnsn
+    email: me@antnsn.dev # Replace with your email
+
+# Packages to ignore (optional)
+# ignore:
+#   - name: package-to-ignore
+#   - name: another-package
+#     version: beta
