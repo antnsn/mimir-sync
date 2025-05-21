@@ -39,7 +39,7 @@ jobs:
           CR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Update Chart README
-        uses: jkroepke/helm-docs-action@v1.7.0
+        uses: jkroepke/helm-docs-action@v1.14.2
         with:
           chart-dir: chart
           output-file: README.md
