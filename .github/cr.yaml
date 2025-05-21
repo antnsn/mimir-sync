@@ -1,0 +1,23 @@
+# The chart-releaser configuration file
+# See: https://github.com/helm/chart-releaser#configuration
+
+# The GitHub URL for creating releases
+git-repo-url: https://github.com/antnsn/mimir-sync
+
+# The GitHub Pages URL for the charts
+github-pages-url: https://antnsn.github.io/mimir-sync
+
+# The path to the directory containing Helm charts
+charts-dir: chart
+
+# The output directory for the chart packages
+charts-repo: .
+
+# Skip existing packages
+skip-existing: true
+
+# The branch used for GitHub Pages
+github-pages-branch: gh-pages
+
+# The commit message used when updating the index
+commit-message: "chore(helm): update chart index [skip ci]"
