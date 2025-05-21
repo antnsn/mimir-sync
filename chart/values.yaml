@@ -57,7 +57,7 @@ alertmanager:
   # Configuration for Alertmanager config
   config:
     # Type of resource to use for Alertmanager config (configmap, secret, or none)
-    type: configmap
+    type: secret
     # Name of an existing ConfigMap/Secret to use (leave empty to create a new one)
     existingName: ""
     # Key in the ConfigMap/Secret that contains the Alertmanager config
@@ -84,7 +84,7 @@ rules:
   # Configuration for Rules config
   config:
     # Type of resource to use for Rules config (configmap, secret, or none)
-    type: configmap
+    type: secret
     # Name of an existing ConfigMap/Secret to use (leave empty to create a new one)
     existingName: ""
     # Key in the ConfigMap/Secret that contains the Rules config
