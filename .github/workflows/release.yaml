@@ -36,7 +36,11 @@ jobs:
       - name: Package chart
         run: |
           mkdir -p .cr-release-packages
-          helm package chart/ -d .cr-release-packages --version ${GITHUB_REF#refs/tags/}
+          # Remove 'v' from version in filename
+          VERSION=${GITHUB_REF#refs/tags/v}
+          helm package chart/ -d .cr-release-packages --version ${VERSION}
+          # Rename the file to remove 'v' from the filename
+          mv .cr-release-packages/mimir-sync-v${VERSION}.tgz .cr-release-packages/mimir-sync-${VERSION}.tgz || true
 
       - name: Checkout gh-pages
         uses: actions/checkout@v4
@@ -71,6 +75,8 @@ jobs:
           
           # Fix the URLs in the index file to be consistent
           sed -i.bak 's|/mimir-sync-|/charts/mimir-sync-|g' gh-pages/index.yaml
+          # Remove any 'v' in the URLs that might cause issues
+          sed -i.bak 's|/v\([0-9]\+\.\)|/\1|g' gh-pages/index.yaml
           rm -f gh-pages/index.yaml.bak
 
       - name: Commit and push
