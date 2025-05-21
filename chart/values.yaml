@@ -140,7 +140,7 @@ alertmanagerConfig: ""
 #               password: somePassword
 
 # Prometheus rules in YAML format
-prometheusRules: ""
+prometheusRules: {}
   # node.yml: |
   #   groups:
   #     - name: node-exporter
