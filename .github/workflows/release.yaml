@@ -10,8 +10,8 @@ on:
     branches:
       - main
     paths:
-      - 'chart/**'
-      - '.github/workflows/release.yaml'
+      - "chart/**"
+      - ".github/workflows/release.yaml"
   release:
     types: [created]
   workflow_dispatch:
@@ -32,7 +32,7 @@ jobs:
           version: v3.17.1
 
       - name: Run chart-releaser
-        uses: helm/chart-releaser-action@v1.8.0
+        uses: helm/chart-releaser-action@v1.7.0
         with:
           config: .github/cr.yaml
         env:
