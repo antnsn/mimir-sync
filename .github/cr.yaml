@@ -5,13 +5,13 @@
 git-repo-url: https://github.com/antnsn/mimir-sync
 
 # The GitHub Pages URL for the charts
-github-pages-url: https://antnsn.github.io/mimir-sync
+github-pages-url: https://antnsn.github.io/mimir-sync/charts
 
 # The path to the directory containing Helm charts
 charts-dir: chart
 
 # The output directory for the chart packages
-charts-repo: .
+charts-repo: ./docs
 
 # Skip existing packages
 skip-existing: true
