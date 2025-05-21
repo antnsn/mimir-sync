@@ -39,7 +39,80 @@ This chart is also available on [![Artifact Hub](https://img.shields.io/endpoint
 
 ## Releasing a New Version
 
-To release a new version of this chart:
+### Using the Release Script (Recommended)
+
+We provide a release script that automates the entire release process. The script performs the following steps:
+
+1. Validates the new version number
+2. Updates the chart version (and optionally appVersion)
+3. Runs Helm lint to validate the chart
+4. Updates the documentation
+5. Shows a diff of changes
+6. Asks for confirmation before proceeding
+7. Commits the changes, creates a tag, and pushes everything
+
+#### Basic Usage
+
+```bash
+# Make the script executable if it's not already
+chmod +x scripts/release.sh
+
+# Run the release script
+./scripts/release.sh
+```
+
+#### Dry Run Mode
+
+To see what the script would do without making any changes:
+
+```bash
+./scripts/release.sh --dry-run
+```
+
+This will:
+- Show what would be committed
+- Display the tag that would be created
+- Indicate that changes would be pushed
+- Exit without making any actual changes
+
+#### Prerequisites
+
+The script requires:
+- `git` - For version control operations
+- `helm` - For linting the chart
+- `go` - For installing `helm-docs` if not already installed
+- `helm-docs` - For generating documentation (will be installed automatically if needed)
+
+#### Example Output
+
+```
+$ ./scripts/release.sh --dry-run
+Current version: 1.0.0
+Enter new version (current: 1.0.0): 1.0.1
+Update appVersion? (current: 1.0.0) [y/N] n
+Running Helm lint...
+✓ Helm lint passed
+Updating documentation...
+No documentation changes detected.
+
+Changes to be committed:
+...
+
+The following actions will be performed:
+1. Commit version 1.0.1 changes
+2. Create and push tag v1.0.1
+3. Push changes to main branch
+
+Proceed with release? [y/N] y
+[DRY RUN] Would commit changes with message: chore: prepare for v1.0.1 release
+[DRY RUN] Would create and push tag: v1.0.1
+[DRY RUN] Would push changes to remote
+✓ Dry run complete. No changes were made.
+```
+
+### Manual Release Process
+
+If you prefer to do it manually:
 
 1. **Update the chart version** in `chart/Chart.yaml` following [semantic versioning](https://semver.org/):
    ```yaml
@@ -54,7 +127,7 @@ To release a new version of this chart:
    git push origin main
    ```
 
-3. **Create a new release tag** which will trigger the release workflow:
+3. **Create and push a new tag** which will trigger the release workflow:
    ```bash
    git tag -a vX.Y.Z -m "Release vX.Y.Z"
    git push origin vX.Y.Z
