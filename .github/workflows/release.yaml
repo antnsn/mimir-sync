@@ -53,18 +53,24 @@ jobs:
             echo "generated: \"$(date -u +'%Y-%m-%dT%H:%M:%SZ')\"" >> gh-pages/index.yaml
           fi
 
+      # In .github/workflows/release.yaml
+
       - name: Update index
         run: |
-          helm repo index .cr-release-packages --merge gh-pages/index.yaml --url https://antnsn.github.io/mimir-sync
-          cp .cr-release-packages/index.yaml gh-pages/
+          # Copy the chart package to gh-pages
+          mkdir -p gh-pages/charts
+          cp .cr-release-packages/*.tgz gh-pages/charts/
+
+          # Update the index
+          helm repo index gh-pages --merge gh-pages/index.yaml --url https://antnsn.github.io/mimir-sync
 
       - name: Commit and push
         run: |
           cd gh-pages
           git config user.name "GitHub Actions"
           git config user.email "actions@github.com"
-          git add index.yaml
-          git commit -m "Update Helm chart index"
+          git add .
+          git commit -m "Update Helm chart index and package"
           git push origin gh-pages
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
