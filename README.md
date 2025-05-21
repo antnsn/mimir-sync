@@ -35,7 +35,7 @@ helm install mimir-sync ./chart -n mimir-sync --create-namespace \
 
 ### Artifact Hub
 
-This chart is also available on [![Artifact Hub](https://img.shields.io/endpoint?url=https://artifacthub.io/badge/repository/mimir-sync)](https://artifacthub.io/packages/helm/mimir-sync/mimir-sync).
+This chart is also available on [![Artifact Hub](https://img.shields.io/endpoint?url=https://artifacthub.io/badge/repository/mimir-sync)](https://artifacthub.io/packages/helm/mimir-sync/mimir-sync)
 
 ## Configuration
 
