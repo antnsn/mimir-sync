@@ -7,17 +7,20 @@ permissions:
 
 on:
   push:
-    branches:
-      - main
     tags:
-      - "v*" # Trigger on version tags (e.g., v1.0.0)
-  workflow_dispatch: # Allow manual triggering
+      - 'v*'  # Matches tags starting with 'v' (e.g., v1.0.0)
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to release (e.g., 1.0.0)'
+        required: true
 
 jobs:
   release:
+    name: Release Helm Chart
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
+      - name: Checkout code
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
@@ -36,11 +39,21 @@ jobs:
       - name: Package chart
         run: |
           mkdir -p .cr-release-packages
-          # Remove 'v' from version in filename
-          VERSION=${GITHUB_REF#refs/tags/v}
-          helm package chart/ -d .cr-release-packages --version ${VERSION}
-          # Rename the file to remove 'v' from the filename
-          mv .cr-release-packages/mimir-sync-v${VERSION}.tgz .cr-release-packages/mimir-sync-${VERSION}.tgz || true
+          
+          # Get version from tag (remove 'v' prefix if present)
+          if [[ ${{ github.ref }} == refs/tags/* ]]; then
+            VERSION=${GITHUB_REF#refs/tags/}
+            VERSION=${VERSION#v}  # Remove 'v' prefix if present
+          else
+            VERSION=${{ github.event.inputs.version || '0.0.0' }}
+          fi
+          
+          echo "Packaging chart version: $VERSION"
+          
+          # Package the chart with the version
+          helm package chart/ -d .cr-release-packages --version $VERSION
+          
+          # The output will be .cr-release-packages/mimir-sync-{VERSION}.tgz
 
       - name: Checkout gh-pages
         uses: actions/checkout@v4
@@ -49,53 +62,47 @@ jobs:
           path: gh-pages
           token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Create index if not exists
+      - name: Update GitHub Pages index
         run: |
-          if [ ! -f gh-pages/index.yaml ]; then
-            echo "apiVersion: v1" > gh-pages/index.yaml
-            echo "entries: {}" >> gh-pages/index.yaml
-            echo "generated: \"$(date -u +'%Y-%m-%dT%H:%M:%SZ')\"" >> gh-pages/index.yaml
-          fi
-
-      # In .github/workflows/release.yaml
-
-      - name: Update index
-        run: |
-          # Copy the chart package to the root of gh-pages
-          mkdir -p gh-pages/charts
-          cp .cr-release-packages/*.tgz gh-pages/charts/
-          
-          # Get the version without 'v' prefix
-          VERSION=${GITHUB_REF#refs/tags/v}
-          
-          # Create a clean index in a temporary location
-          mkdir -p temp-index
-          cp gh-pages/charts/*.tgz temp-index/
-          
-          # Generate the index with the correct base URL
-          helm repo index temp-index --url https://antnsn.github.io/mimir-sync/charts/
-          
-          # Merge with existing index if it exists
-          if [ -f gh-pages/index.yaml ]; then
-            helm repo index temp-index --merge gh-pages/index.yaml --url https://antnsn.github.io/mimir-sync/charts/
+          # Get version from environment
+          VERSION=""
+          if [[ ${{ github.ref }} == refs/tags/* ]]; then
+            VERSION=${GITHUB_REF#refs/tags/}
+            VERSION=${VERSION#v}  # Remove 'v' prefix if present
+          else
+            VERSION=${{ github.event.inputs.version || '0.0.0' }}
           fi
           
-          # Copy the new index to gh-pages
-          cp temp-index/index.yaml gh-pages/
+          echo "Updating index for version: $VERSION"
           
-          # Clean up
-          rm -rf temp-index
-
-      - name: Commit and push
-        run: |
+          # Move to gh-pages directory
           cd gh-pages
-          git config user.name "GitHub Actions"
-          git config user.email "actions@github.com"
+          
+          # Download the existing index.yaml if it exists
+          if [ -f index.yaml ]; then
+            echo "Merging with existing index.yaml"
+            helm repo index --merge index.yaml ../.cr-release-packages --url https://antnsn.github.io/mimir-sync
+          else
+            echo "Creating new index.yaml"
+            helm repo index ../.cr-release-packages --url https://antnsn.github.io/mimir-sync
+            mv ../.cr-release-packages/index.yaml .
+          fi
+          
+          # Copy the chart package to gh-pages
+          cp ../.cr-release-packages/*.tgz .
+          
+          # Add and commit changes
+          git config --global user.name "GitHub Actions"
+          git config --global user.email "actions@github.com"
           git add .
-          git commit -m "Update Helm chart index and package"
-          git push origin gh-pages
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          
+          # Check if there are any changes to commit
+          if ! git diff --cached --quiet; then
+            git commit -m "Update chart index for version $VERSION"
+            git push origin gh-pages
+          else
+            echo "No changes to commit"
+          fi
 
       - name: Create Release
         uses: softprops/action-gh-release@v2
