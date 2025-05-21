@@ -1,6 +1,8 @@
 # Default values for mimir-sync
 # This is a YAML-formatted file.
 # Declare variables to be passed into your templates.
+# This file contains all the configurable parameters for the Mimir Sync chart.
+# For more details, see: https://github.com/antnsn/mimir-sync
 
 # Image configuration
 image:

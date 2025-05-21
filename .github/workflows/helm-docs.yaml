@@ -1,0 +1,72 @@
+name: Helm Docs
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'chart/**/*.yaml'
+  pull_request:
+    branches: [ main ]
+    paths:
+      - 'chart/**/*.yaml'
+  workflow_dispatch:
+
+jobs:
+  helm-docs:
+    name: Generate Helm Docs
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Run helm-docs
+        uses: norwoodj/helm-docs-action@v1.9.0
+        with:
+          chart-dir: chart
+          output-file: README.md
+          template-files: ""
+          template-data: ""
+          template-path: ""
+          chart-to-generate: "chart"
+          chart-search-root: ""
+          sort-values-order: "file"
+          ignore-file: ""
+          ignore-values-file: ""
+          output-dir: ""
+          output-template: ""
+          output-format: "markdown"
+          output-values: ""
+          output-values-template: ""
+          output-values-format: "yaml"
+          output-values-dest: ""
+          output-values-template-dest: ""
+          output-values-format-dest: ""
+          output-values-dest-dir: ""
+          output-values-template-dest-dir: ""
+          output-values-format-dest-dir: ""
+          dry-run: false
+          fail-on-diff: true
+          check-only: false
+          debug: false
+          quiet: false
+          version: ""
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Create Pull Request
+        uses: peter-evans/create-pull-request@v5
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          commit-message: "docs: update helm chart documentation"
+          title: "docs: update helm chart documentation"
+          body: "Automated update of Helm chart documentation"
+          branch: "update-helm-docs"
+          delete-branch: true
+          base: main
+          draft: false
+          request-to-parent: false
+          branch-suffix: timestamp
+          signoff: false
+          author: "GitHub Actions <actions@github.com>"
+          committer: "GitHub Actions <actions@github.com>"

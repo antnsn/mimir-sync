@@ -1,0 +1,42 @@
+# .helm-docs.yml
+
+# Output file name. E.g. README.md
+output-file: "README.md"
+
+# Templates to use. This can be a path to a template file or a URL to a remote template.
+template-files: "chart/README.md.tpl"
+
+# Directory to search for Chart.yaml files
+chart-dir: "chart"
+
+# Recursively search for Chart.yaml files in subdirectories
+recursive: false
+
+# Sort values by type and name
+data-sort-values: true
+
+# Output values in YAML format
+output-format: "yaml"
+
+# Ignore files matching the given glob patterns
+ignore:
+  - "**/templates/_*.tpl"
+  - "**/templates/_helpers.tpl"
+  - "**/templates/NOTES.txt"
+
+# Template data to pass to the template
+template-data: {}
+
+# Template functions to include
+template-functions: {}
+
+# Template delimiters
+template-delims:
+  left: "{{ "}
+  right: "}}"
+
+# Template function to use for rendering
+template-renderer: "text/template"
+
+# Template function to use for parsing
+template-parser: "text/template"
