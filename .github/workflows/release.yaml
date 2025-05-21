@@ -2,8 +2,9 @@ name: Release Chart
 
 # Add these permissions
 permissions:
-  contents: write # Needed to push to gh-pages
+  contents: write # Needed to push to gh-pages and create PRs
   packages: write # Needed to create releases
+  pull-requests: write # Needed to create pull requests
 
 on:
   push:
@@ -55,6 +56,7 @@ jobs:
       - name: Create Pull Request
         uses: peter-evans/create-pull-request@v5
         with:
+          token: ${{ secrets.GITHUB_TOKEN }}
           commit-message: "docs: update chart documentation"
           title: "docs: update chart documentation"
           body: "Automated update of Helm chart documentation"
