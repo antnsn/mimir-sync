@@ -22,37 +22,12 @@ jobs:
           fetch-depth: 0
 
       - name: Run helm-docs
-        uses: norwoodj/helm-docs-action@v1.9.0
+        uses: norwoodj/helm-docs@v1.14.2
         with:
           chart-dir: chart
           output-file: README.md
-          template-files: ""
-          template-data: ""
-          template-path: ""
-          chart-to-generate: "chart"
-          chart-search-root: ""
-          sort-values-order: "file"
-          ignore-file: ""
-          ignore-values-file: ""
-          output-dir: ""
-          output-template: ""
-          output-format: "markdown"
-          output-values: ""
-          output-values-template: ""
-          output-values-format: "yaml"
-          output-values-dest: ""
-          output-values-template-dest: ""
-          output-values-format-dest: ""
-          output-values-dest-dir: ""
-          output-values-template-dest-dir: ""
-          output-values-format-dest-dir: ""
-          dry-run: false
-          fail-on-diff: true
-          check-only: false
-          debug: false
-          quiet: false
-          version: ""
           token: ${{ secrets.GITHUB_TOKEN }}
+          config-file: .helm-docs.yml
 
       - name: Create Pull Request
         uses: peter-evans/create-pull-request@v5
@@ -70,3 +45,6 @@ jobs:
           signoff: false
           author: "GitHub Actions <actions@github.com>"
           committer: "GitHub Actions <actions@github.com>"
+          add-paths: |
+            chart/README.md
+            .helm-docs.yml
