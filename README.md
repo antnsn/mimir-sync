@@ -35,6 +35,8 @@ helm install mimir-sync ./chart -n mimir-sync --create-namespace \
 
 ### Artifact Hub
 
+<div class="artifacthub-widget" data-url="https://artifacthub.io/packages/helm/mimir-sync/mimir-sync" data-theme="dark" data-header="true" data-stars="true" data-responsive="false"><blockquote><p lang="en" dir="ltr"><b>mimir-sync</b>: A Helm chart for syncing Mimir alertmanager config and Prometheus rules</p>&mdash; Open in <a href="https://artifacthub.io/packages/helm/mimir-sync/mimir-sync">Artifact Hub</a></blockquote></div><script async src="https://artifacthub.io/artifacthub-widget.js"></script>
+
 This chart is also available on [Artifact Hub](https://artifacthub.io/packages/helm/mimir-sync/mimir-sync).
 
 [![Artifact Hub](https://img.shields.io/endpoint?url=https://artifacthub.io/badge/repository/mimir-sync)](https://artifacthub.io/packages/helm/mimir-sync/mimir-sync)
