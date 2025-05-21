@@ -6,7 +6,7 @@ on:
     branches:
       - main
     tags:
-      - 'v*'  # Trigger on version tags (e.g., v1.0.0)
+      - "v*" # Trigger on version tags (e.g., v1.0.0)
 
 jobs:
   release:
@@ -36,8 +36,9 @@ jobs:
       - name: Run chart-releaser
         uses: helm/chart-releaser-action@cae68fefc6b5f367a0275617c9f83181ba54714f # v1.7.0
         with:
-          charts_dir: "chart"  # Point to the correct chart directory
+          charts_dir: "chart"
           skip_existing: true
+          force: true
         env:
           CR_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
           CR_GENERATE_RELEASE_NOTES: true
