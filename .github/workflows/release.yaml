@@ -33,12 +33,6 @@ jobs:
         with:
           version: v3.17.1
 
-      - name: Generate Helm Docs
-        uses: norwoodj/helm-docs-action@v1.9.0
-        with:
-          chart-dir: chart
-          output-file: README.md
-
       - name: Package chart
         run: |
           mkdir -p .cr-release-packages
