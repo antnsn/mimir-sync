@@ -26,7 +26,7 @@ A Helm chart for syncing Mimir alertmanager config and Prometheus rules
 | alertmanager.configPath | string | `"/config/config.yml"` |  |
 | alertmanager.enabled | bool | `true` |  |
 | alertmanager.resources | object | `{}` |  |
-| alertmanagerConfig | string | `"global:\n  resolve_timeout: 5m\nroute:\n  group_by: ['alertname']\n  group_wait: 10s\n  group_interval: 5m\n  repeat_interval: 15m\n  receiver: someReceiver\n  routes:\n    - match:\n        severity: critical\n      receiver: someReceiver\n      group_wait: 10s\n      group_interval: 2m\n      repeat_interval: 5m\n    - match:\n        severity: warning\n      receiver: keep\n      group_wait: 10s\n      group_interval: 2m\n      repeat_interval: 5m\nreceivers:\n  - name: \"someReceiver\"\n    webhook_configs:\n      - url: \"https://someurl\"\n        send_resolved: true\n        http_config:\n          basic_auth:\n            username: someUsername\n            password: somePassword\n"` |  |
+| alertmanagerConfig | string | `""` |  |
 | global.commonAnnotations | object | `{}` |  |
 | global.commonLabels | object | `{}` |  |
 | global.createNamespace | bool | `true` |  |
@@ -53,7 +53,7 @@ A Helm chart for syncing Mimir alertmanager config and Prometheus rules
 | pod.topologySpreadConstraints | list | `[]` |  |
 | pod.volumeMounts | list | `[]` |  |
 | pod.volumes | list | `[]` |  |
-| prometheusRules."node.yml" | string | `"groups:\n  - name: node-exporter\n    rules:\n      - alert: NodeDown\n        expr: up{job=~\"k8s-nodes|external-servers\"} == 0\n        for: 2m\n        labels:\n          severity: critical\n        annotations:\n          summary: Node down (instance {{ $labels.instance }})\n          description: \"Node is down or not responding\\n  VALUE = {{ $value }}\\n  LABELS = {{ $labels }}\"\n      - alert: HighNodeLoad\n        expr: node_load1 > 5\n        for: 5m\n        labels:\n          severity: warning\n        annotations:\n          description: '{{ $labels.instance }} has high load (current value: {{ $value }})'\n          summary: High load on {{ $labels.instance }}\n      - alert: HostOutOfMemory\n        expr: node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes * 100 < 10\n        for: 5m\n        labels:\n          severity: warning\n        annotations:\n          summary: Host out of memory (instance {{ $labels.instance }})\n          description: \"Node memory is filling up (< 10% left)\\n  VALUE = {{ $value }}\\n  LABELS = {{ $labels }}\"\n      - alert: HostHighCpuLoad\n        expr: 100 - (avg by(instance) (rate(node_cpu_seconds_total{mode=\"idle\"}[5m])) * 100) > 85\n        for: 10m\n        labels:\n          severity: warning\n        annotations:\n          summary: Host high CPU load (instance {{ $labels.instance }})\n          description: '{{ $labels.instance }} has high CPU load (current value: {{ $value }})'\n      - alert: HostOutOfDiskSpace\n        expr: (node_filesystem_avail_bytes{mountpoint=\"/\"}  / node_filesystem_size_bytes{mountpoint=\"/\"} * 100) < 10\n        for: 5m\n        labels:\n          severity: warning\n        annotations:\n          summary: Host out of disk space (instance {{ $labels.instance }})\n          description: \"Disk is almost full (< 10% left)\\n  VALUE = {{ $value }}\\n  LABELS = {{ $labels }}\"\n"` |  |
+| prometheusRules | string | `""` |  |
 | rbac.create | bool | `true` |  |
 | rules.config.existingName | string | `""` |  |
 | rules.config.key | string | `"rules.yml"` |  |

@@ -106,84 +106,85 @@ rules:
     #   memory: 64Mi
 
 # Alertmanager configuration in YAML format
-alertmanagerConfig: |
-  global:
-    resolve_timeout: 5m
-  route:
-    group_by: ['alertname']
-    group_wait: 10s
-    group_interval: 5m
-    repeat_interval: 15m
-    receiver: someReceiver
-    routes:
-      - match:
-          severity: critical
-        receiver: someReceiver
-        group_wait: 10s
-        group_interval: 2m
-        repeat_interval: 5m
-      - match:
-          severity: warning
-        receiver: keep
-        group_wait: 10s
-        group_interval: 2m
-        repeat_interval: 5m
-  receivers:
-    - name: "someReceiver"
-      webhook_configs:
-        - url: "https://someurl"
-          send_resolved: true
-          http_config:
-            basic_auth:
-              username: someUsername
-              password: somePassword
+alertmanagerConfig: ""
+# alertmanagerConfig: |
+#   global:
+#     resolve_timeout: 5m
+#   route:
+#     group_by: ['alertname']
+#     group_wait: 10s
+#     group_interval: 5m
+#     repeat_interval: 15m
+#     receiver: someReceiver
+#     routes:
+#       - match:
+#           severity: critical
+#         receiver: someReceiver
+#         group_wait: 10s
+#         group_interval: 2m
+#         repeat_interval: 5m
+#       - match:
+#           severity: warning
+#         receiver: keep
+#         group_wait: 10s
+#         group_interval: 2m
+#         repeat_interval: 5m
+#   receivers:
+#     - name: "someReceiver"
+#       webhook_configs:
+#         - url: "https://someurl"
+#           send_resolved: true
+#           http_config:
+#             basic_auth:
+#               username: someUsername
+#               password: somePassword
 
 # Prometheus rules in YAML format
-prometheusRules:
-  node.yml: |
-    groups:
-      - name: node-exporter
-        rules:
-          - alert: NodeDown
-            expr: up{job=~"k8s-nodes|external-servers"} == 0
-            for: 2m
-            labels:
-              severity: critical
-            annotations:
-              summary: Node down (instance {{ $labels.instance }})
-              description: "Node is down or not responding\n  VALUE = {{ $value }}\n  LABELS = {{ $labels }}"
-          - alert: HighNodeLoad
-            expr: node_load1 > 5
-            for: 5m
-            labels:
-              severity: warning
-            annotations:
-              description: '{{ $labels.instance }} has high load (current value: {{ $value }})'
-              summary: High load on {{ $labels.instance }}
-          - alert: HostOutOfMemory
-            expr: node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes * 100 < 10
-            for: 5m
-            labels:
-              severity: warning
-            annotations:
-              summary: Host out of memory (instance {{ $labels.instance }})
-              description: "Node memory is filling up (< 10% left)\n  VALUE = {{ $value }}\n  LABELS = {{ $labels }}"
-          - alert: HostHighCpuLoad
-            expr: 100 - (avg by(instance) (rate(node_cpu_seconds_total{mode="idle"}[5m])) * 100) > 85
-            for: 10m
-            labels:
-              severity: warning
-            annotations:
-              summary: Host high CPU load (instance {{ $labels.instance }})
-              description: '{{ $labels.instance }} has high CPU load (current value: {{ $value }})'
-          - alert: HostOutOfDiskSpace
-            expr: (node_filesystem_avail_bytes{mountpoint="/"}  / node_filesystem_size_bytes{mountpoint="/"} * 100) < 10
-            for: 5m
-            labels:
-              severity: warning
-            annotations:
-              summary: Host out of disk space (instance {{ $labels.instance }})
-              description: "Disk is almost full (< 10% left)\n  VALUE = {{ $value }}\n  LABELS = {{ $labels }}"
+prometheusRules: ""
+  # node.yml: |
+  #   groups:
+  #     - name: node-exporter
+  #       rules:
+  #         - alert: NodeDown
+  #           expr: up{job=~"k8s-nodes|external-servers"} == 0
+  #           for: 2m
+  #           labels:
+  #             severity: critical
+  #           annotations:
+  #             summary: Node down (instance {{ $labels.instance }})
+  #             description: "Node is down or not responding\n  VALUE = {{ $value }}\n  LABELS = {{ $labels }}"
+  #         - alert: HighNodeLoad
+  #           expr: node_load1 > 5
+  #           for: 5m
+  #           labels:
+  #             severity: warning
+  #           annotations:
+  #             description: '{{ $labels.instance }} has high load (current value: {{ $value }})'
+  #             summary: High load on {{ $labels.instance }}
+  #         - alert: HostOutOfMemory
+  #           expr: node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes * 100 < 10
+  #           for: 5m
+  #           labels:
+  #             severity: warning
+  #           annotations:
+  #             summary: Host out of memory (instance {{ $labels.instance }})
+  #             description: "Node memory is filling up (< 10% left)\n  VALUE = {{ $value }}\n  LABELS = {{ $labels }}"
+  #         - alert: HostHighCpuLoad
+  #           expr: 100 - (avg by(instance) (rate(node_cpu_seconds_total{mode="idle"}[5m])) * 100) > 85
+  #           for: 10m
+  #           labels:
+  #             severity: warning
+  #           annotations:
+  #             summary: Host high CPU load (instance {{ $labels.instance }})
+  #             description: '{{ $labels.instance }} has high CPU load (current value: {{ $value }})'
+  #         - alert: HostOutOfDiskSpace
+  #           expr: (node_filesystem_avail_bytes{mountpoint="/"}  / node_filesystem_size_bytes{mountpoint="/"} * 100) < 10
+  #           for: 5m
+  #           labels:
+  #             severity: warning
+  #           annotations:
+  #             summary: Host out of disk space (instance {{ $labels.instance }})
+  #             description: "Disk is almost full (< 10% left)\n  VALUE = {{ $value }}\n  LABELS = {{ $labels }}"
 
 # Service account configuration
 serviceAccount:
