@@ -39,7 +39,8 @@ jobs:
           CR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Update Chart README
-        uses: norwoodj/helm-docs@v1.14.2
+        uses: norwoodj/helm-docs@v1.11.3  # Match version with lint-test workflow
         with:
-          chart-dir: chart
+          chart-search-root: chart
           output-file: README.md
+          output-dir: chart
