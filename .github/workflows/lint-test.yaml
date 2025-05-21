@@ -28,11 +28,15 @@ jobs:
         uses: helm/chart-testing-action@v2.7.0
 
       - name: Validate Chart Documentation
-        uses: jkroepke/helm-docs-action@v1.14.2
+        uses: envoy/install-helm-docs@v1.0.0
         with:
-          chart-dir: chart
-          output-file: README.md
-          check-only: true
+          version: 1.14.2
+          
+      - name: Run helm-docs check
+        working-directory: chart
+        run: |
+          helm-docs
+          git diff --exit-code
 
       - name: Run chart-testing (list-changed)
         id: list-changed
