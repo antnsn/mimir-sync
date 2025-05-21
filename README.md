@@ -37,6 +37,34 @@ helm install mimir-sync ./chart -n mimir-sync --create-namespace \
 
 This chart is also available on [![Artifact Hub](https://img.shields.io/endpoint?url=https://artifacthub.io/badge/repository/mimir-sync)](https://artifacthub.io/packages/helm/mimir-sync/mimir-sync)
 
+## Releasing a New Version
+
+To release a new version of this chart:
+
+1. **Update the chart version** in `chart/Chart.yaml` following [semantic versioning](https://semver.org/):
+   ```yaml
+   version: 1.0.0  # Update this version
+   appVersion: "1.0.0"  # Update if the app version changes
+   ```
+
+2. **Commit and push** the changes to the `main` branch:
+   ```bash
+   git add chart/Chart.yaml
+   git commit -m "chore: prepare for vX.Y.Z release"
+   git push origin main
+   ```
+
+3. **Create a new release tag** which will trigger the release workflow:
+   ```bash
+   git tag -a vX.Y.Z -m "Release vX.Y.Z"
+   git push origin vX.Y.Z
+   ```
+
+The GitHub Actions workflow will automatically:
+- Package the chart
+- Update the Helm repository index
+- Publish the new version to the GitHub Pages site
+
 ## Configuration
 
 Key configurations in `values.yaml`:
