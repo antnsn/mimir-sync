@@ -3,8 +3,8 @@ name: Lint and Test Chart
 on:
   pull_request:
     paths:
-      - 'chart/**'
-      - '.github/workflows/*.yaml'
+      - "chart/**"
+      - ".github/workflows/*.yaml"
 
 env:
   CT_BUILD_ID: "${{ github.run_id }}"
@@ -28,11 +28,10 @@ jobs:
         uses: helm/chart-testing-action@v2.7.0
 
       - name: Validate Chart Documentation
-        uses: norwoodj/helm-docs@v1.11.3  # Using a specific version that's known to work
+        uses: jkroepke/helm-docs-action@v1.7.0
         with:
-          chart-search-root: chart
+          chart-dir: chart
           output-file: README.md
-          output-dir: /tmp
           check-only: true
 
       - name: Run chart-testing (list-changed)
