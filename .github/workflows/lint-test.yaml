@@ -1,5 +1,5 @@
 env:
-  CT_BUILD_ID: '${{ github.run_id }}'
+  CT_BUILD_ID: "${{ github.run_id }}"
 
 name: Chart Testing
 on: [pull_request]
@@ -20,13 +20,13 @@ jobs:
       - name: Run chart-testing (list-changed)
         id: list-changed
         run: |
-          changed="$(ct list-changed --config charts/ct.yaml)"
+          changed="$(ct list-changed --config chart/ct.yaml)"
           if [[ -n "$changed" ]]; then
             echo "changed=true" >> "$GITHUB_OUTPUT"
           fi
 
       - name: Run chart-testing (lint)
-        run: ct lint  --debug --config charts/ct.yaml
+        run: ct lint  --debug --config chart/ct.yaml
 
       - name: Create kind cluster
         uses: helm/kind-action@a1b0e391336a6ee6713a0583f8c6240d70863de3 # v1.12.0
@@ -40,5 +40,5 @@ jobs:
         if: steps.list-changed.outputs.changed == 'true'
 
       - name: Run chart-testing (install)
-        run: ct install --debug --config charts/ct.yaml
+        run: ct install --debug --config chart/ct.yaml
         if: steps.list-changed.outputs.changed == 'true'
