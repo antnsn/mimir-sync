@@ -61,8 +61,17 @@ jobs:
           mkdir -p gh-pages/charts
           cp .cr-release-packages/*.tgz gh-pages/charts/
 
-          # Update the index
-          helm repo index gh-pages --merge gh-pages/index.yaml --url https://antnsn.github.io/mimir-sync
+          # Ensure the URL in the index is consistent
+          CHART_VERSION=$(echo ${GITHUB_REF#refs/tags/v} | tr -d 'v')
+          
+          # Update the index with the correct URL format
+          helm repo index gh-pages \
+            --merge gh-pages/index.yaml \
+            --url https://antnsn.github.io/mimir-sync/charts/
+          
+          # Fix the URLs in the index file to be consistent
+          sed -i.bak 's|/mimir-sync-|/charts/mimir-sync-|g' gh-pages/index.yaml
+          rm -f gh-pages/index.yaml.bak
 
       - name: Commit and push
         run: |
