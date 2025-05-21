@@ -2,11 +2,11 @@ name: Helm Docs
 
 on:
   push:
-    branches: [ main ]
+    branches: [main]
     paths:
       - 'chart/**/*.yaml'
   pull_request:
-    branches: [ main ]
+    branches: [main]
     paths:
       - 'chart/**/*.yaml'
   workflow_dispatch:
@@ -26,25 +26,14 @@ jobs:
         with:
           chart-dir: chart
           output-file: README.md
-          token: ${{ secrets.GITHUB_TOKEN }}
           config-file: .helm-docs.yml
 
       - name: Create Pull Request
         uses: peter-evans/create-pull-request@v5
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
           commit-message: "docs: update helm chart documentation"
           title: "docs: update helm chart documentation"
           body: "Automated update of Helm chart documentation"
           branch: "update-helm-docs"
           delete-branch: true
           base: main
-          draft: false
-          request-to-parent: false
-          branch-suffix: timestamp
-          signoff: false
-          author: "GitHub Actions <actions@github.com>"
-          committer: "GitHub Actions <actions@github.com>"
-          add-paths: |
-            chart/README.md
-            .helm-docs.yml

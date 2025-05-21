@@ -1,40 +1,16 @@
 # .helm-docs.yml
-
-# The version of the configuration format
 version: v1
-
-# The chart directory to process
 chart-dir: "chart"
-
-# The output file name
 output-file: "README.md"
-
-# The template file to use
 template: "chart/README.md.tpl"
-
-# Whether to sort values by type and name
 sort-values: true
-
-# The output format for values (yaml or json)
 output-format: "yaml"
-
-# Ignore files matching these patterns
 ignore:
   - "**/templates/_*.tpl"
   - "**/templates/_helpers.tpl"
   - "**/templates/NOTES.txt"
   - "**/templates/tests/*.yaml"
-
-# Template data to pass to the template
-template-data: {}
-
-# Template functions to include
-template-functions: {}
-
-# Template delimiters
 template-delims:
-  left: "{{ "
+  left: "{{"
   right: "}}"
-
-# Whether to fail if the documentation is not up to date
 fail-on-diff: true
