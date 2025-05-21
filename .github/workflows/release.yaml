@@ -61,23 +61,30 @@ jobs:
 
       - name: Update index
         run: |
-          # Copy the chart package to gh-pages
+          # Copy the chart package to the root of gh-pages
           mkdir -p gh-pages/charts
           cp .cr-release-packages/*.tgz gh-pages/charts/
-
-          # Ensure the URL in the index is consistent
-          CHART_VERSION=$(echo ${GITHUB_REF#refs/tags/v} | tr -d 'v')
           
-          # Update the index with the correct URL format
-          helm repo index gh-pages \
-            --merge gh-pages/index.yaml \
-            --url https://antnsn.github.io/mimir-sync/charts/
+          # Get the version without 'v' prefix
+          VERSION=${GITHUB_REF#refs/tags/v}
           
-          # Fix the URLs in the index file to be consistent
-          sed -i.bak 's|/mimir-sync-|/charts/mimir-sync-|g' gh-pages/index.yaml
-          # Remove any 'v' in the URLs that might cause issues
-          sed -i.bak 's|/v\([0-9]\+\.\)|/\1|g' gh-pages/index.yaml
-          rm -f gh-pages/index.yaml.bak
+          # Create a clean index in a temporary location
+          mkdir -p temp-index
+          cp gh-pages/charts/*.tgz temp-index/
+          
+          # Generate the index with the correct base URL
+          helm repo index temp-index --url https://antnsn.github.io/mimir-sync/charts/
+          
+          # Merge with existing index if it exists
+          if [ -f gh-pages/index.yaml ]; then
+            helm repo index temp-index --merge gh-pages/index.yaml --url https://antnsn.github.io/mimir-sync/charts/
+          fi
+          
+          # Copy the new index to gh-pages
+          cp temp-index/index.yaml gh-pages/
+          
+          # Clean up
+          rm -rf temp-index
 
       - name: Commit and push
         run: |
