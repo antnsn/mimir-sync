@@ -41,17 +41,7 @@ This chart is also available on [![Artifact Hub](https://img.shields.io/endpoint
 
 ### Using the Release Script (Recommended)
 
-We provide a release script that automates the entire release process. The script performs the following steps:
-
-1. Validates the new version number
-2. Updates the chart version (and optionally appVersion)
-3. Runs Helm lint to validate the chart
-4. Updates the documentation
-5. Shows a diff of changes
-6. Asks for confirmation before proceeding
-7. Commits the changes, creates a tag, and pushes everything
-
-#### Basic Usage
+We provide a release script that automates the entire release process:
 
 ```bash
 # Make the script executable if it's not already
@@ -69,11 +59,18 @@ To see what the script would do without making any changes:
 ./scripts/release.sh --dry-run
 ```
 
-This will:
-- Show what would be committed
-- Display the tag that would be created
-- Indicate that changes would be pushed
-- Exit without making any actual changes
+This will show what would be committed, which tag would be created, and what would be pushed, without making any actual changes.
+
+#### What the Script Does
+
+1. Validates the new version number (must follow semantic versioning)
+2. Updates the chart version in `chart/Chart.yaml`
+3. Optionally updates the `appVersion` if requested
+4. Runs `helm lint` to validate the chart
+5. Updates the documentation using `helm-docs`
+6. Shows a diff of all changes
+7. Asks for confirmation before proceeding
+8. Commits the changes, creates an annotated tag, and pushes everything
 
 #### Prerequisites
 
@@ -82,33 +79,6 @@ The script requires:
 - `helm` - For linting the chart
 - `go` - For installing `helm-docs` if not already installed
 - `helm-docs` - For generating documentation (will be installed automatically if needed)
-
-#### Example Output
-
-```
-$ ./scripts/release.sh --dry-run
-Current version: 1.0.0
-Enter new version (current: 1.0.0): 1.0.1
-Update appVersion? (current: 1.0.0) [y/N] n
-Running Helm lint...
-✓ Helm lint passed
-Updating documentation...
-No documentation changes detected.
-
-Changes to be committed:
-...
-
-The following actions will be performed:
-1. Commit version 1.0.1 changes
-2. Create and push tag v1.0.1
-3. Push changes to main branch
-
-Proceed with release? [y/N] y
-[DRY RUN] Would commit changes with message: chore: prepare for v1.0.1 release
-[DRY RUN] Would create and push tag: v1.0.1
-[DRY RUN] Would push changes to remote
-✓ Dry run complete. No changes were made.
-```
 
 ### Manual Release Process
 
