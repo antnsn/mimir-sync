@@ -1,6 +1,6 @@
 # mimir-sync
 
-![Version: 1.2.2](https://img.shields.io/badge/Version-1.2.2-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 1.0.0](https://img.shields.io/badge/AppVersion-1.0.0-informational?style=flat-square)
+![Version: 1.2.5](https://img.shields.io/badge/Version-1.2.5-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 1.0.0](https://img.shields.io/badge/AppVersion-1.0.0-informational?style=flat-square)
 
 A Helm chart for syncing Mimir alertmanager config and Prometheus rules
 
@@ -20,14 +20,20 @@ A Helm chart for syncing Mimir alertmanager config and Prometheus rules
 
 | Key | Type | Default | Description |
 |-----|------|---------|-------------|
+| alertmanager.affinity | object | `{}` |  |
 | alertmanager.config.existingName | string | `""` |  |
 | alertmanager.config.key | string | `"config.yml"` |  |
 | alertmanager.config.type | string | `"secret"` |  |
 | alertmanager.configPath | string | `"/config/config.yml"` |  |
 | alertmanager.enabled | bool | `true` |  |
+| alertmanager.extraEnv | list | `[]` |  |
 | alertmanager.extraVolumeMounts | list | `[]` |  |
 | alertmanager.extraVolumes | list | `[]` |  |
+| alertmanager.imagePullSecrets | list | `[]` |  |
+| alertmanager.nodeSelector | object | `{}` |  |
 | alertmanager.resources | object | `{}` |  |
+| alertmanager.tolerations | list | `[]` |  |
+| alertmanager.topologySpreadConstraints | list | `[]` |  |
 | alertmanagerConfig | string | `""` |  |
 | global.commonAnnotations | object | `{}` |  |
 | global.commonLabels | object | `{}` |  |
@@ -40,21 +46,22 @@ A Helm chart for syncing Mimir alertmanager config and Prometheus rules
 | image.tag | string | `"latest"` |  |
 | mimir.address | string | `"http://mimir-distributed-nginx.mimir.svc.cluster.local:80"` |  |
 | mimir.tenantId | string | `"anonymous"` |  |
-| pod.affinity | object | `{}` |  |
-| pod.env | list | `[]` |  |
-| pod.nodeSelector | object | `{}` |  |
-| pod.tolerations | list | `[]` |  |
-| pod.topologySpreadConstraints | list | `[]` |  |
-| pod.volumeMounts | list | `[]` |  |
-| pod.volumes | list | `[]` |  |
 | prometheusRules | object | `{}` |  |
 | rbac.create | bool | `true` |  |
+| rules.affinity | object | `{}` |  |
 | rules.config.existingName | string | `""` |  |
 | rules.config.key | string | `"rules.yml"` |  |
 | rules.config.type | string | `"secret"` |  |
 | rules.enabled | bool | `true` |  |
+| rules.extraEnv | list | `[]` |  |
+| rules.extraVolumeMounts | list | `[]` |  |
+| rules.extraVolumes | list | `[]` |  |
+| rules.imagePullSecrets | list | `[]` |  |
+| rules.nodeSelector | object | `{}` |  |
 | rules.resources | object | `{}` |  |
 | rules.rulesPath | string | `"/rules"` |  |
+| rules.tolerations | list | `[]` |  |
+| rules.topologySpreadConstraints | list | `[]` |  |
 | rules.url | string | `"http://mimir-ruler:8080"` |  |
 | serviceAccount.annotations | object | `{}` |  |
 | serviceAccount.create | bool | `true` |  |
