@@ -121,6 +121,9 @@ spec:
           {{- with .Values.pod.volumeMounts }}
             {{- toYaml . | nindent 10 }}
           {{- end }}
+          {{- with .Values.rules.extraVolumeMounts }}
+            {{- toYaml . | nindent 10 }}
+          {{- end }}
           env:
             - name: MIMIR_ADDRESS
               value: "{{ .Values.mimir.address }}"
@@ -156,17 +159,20 @@ spec:
       {{- with .Values.pod.topologySpreadConstraints }}
       topologySpreadConstraints:
         {{- toYaml . | nindent 8 }}
-      {{- end }}
-      {{- if ne .Values.rules.config.type "none" }}
       volumes:
+        {{- if ne .Values.rules.config.type "none" }}
         - name: rules-config
           {{- if eq .Values.rules.config.type "configmap" }}
           configMap:
-            name: {{ if .Values.rules.config.existingName }}{{ .Values.rules.config.existingName }}{{ else }}{{ include "mimir-sync.fullname" . }}-rules{{ end }}
-          {{- else if eq .Values.rules.config.type "secret" }}
+            name: {{ .Values.rules.config.name }}
+          {{- else }}
           secret:
-            secretName: {{ if .Values.rules.config.existingName }}{{ .Values.rules.config.existingName }}{{ else }}{{ include "mimir-sync.fullname" . }}-rules-config{{ end }}
+            secretName: {{ .Values.rules.config.name }}
           {{- end }}
+        {{- end }}
+        {{- with .Values.rules.extraVolumes }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
       {{- end }}
       {{- with .Values.pod.volumes }}
         {{- toYaml . | nindent 8 }}

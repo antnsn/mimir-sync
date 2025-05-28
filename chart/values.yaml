@@ -78,6 +78,18 @@ alertmanager:
     #   cpu: 50m
     #   memory: 64Mi
 
+  # Extra volumes to mount in the alertmanager sync job
+  extraVolumes: []
+    # - name: extra-config
+    #   configMap:
+    #     name: extra-alertmanager-config
+
+  # Extra volume mounts for the alertmanager sync job
+  extraVolumeMounts: []
+    # - name: extra-config
+    #   mountPath: /extra-config
+    #   readOnly: true
+
 # Rules sync configuration
 rules:
   # Enable or disable Rules sync
@@ -106,6 +118,18 @@ rules:
     # requests:
     #   cpu: 50m
     #   memory: 64Mi
+
+  # Extra volumes to mount in the rules sync job
+  extraVolumes: []
+    # - name: extra-rules
+    #   configMap:
+    #     name: extra-rules-config
+
+  # Extra volume mounts for the rules sync job
+  extraVolumeMounts: []
+    # - name: extra-rules
+    #   mountPath: /extra-rules
+    #   readOnly: true
 
 # Alertmanager configuration in YAML format
 alertmanagerConfig: ""
@@ -188,51 +212,21 @@ prometheusRules: {}
   #             summary: Host out of disk space (instance {{ $labels.instance }})
   #             description: "Disk is almost full (< 10% left)\n  VALUE = {{ $value }}\n  LABELS = {{ $labels }}"
 
-# Service account configuration
-serviceAccount:
-  # Specifies whether a service account should be created
-  create: true
-  # The name of the service account to use
-  name: ""
-  # Annotations to add to the service account
-  annotations: {}
-  # Image pull secrets that are attached to the service account
-  imagePullSecrets: []
-  # Automount API credentials for the service account
-  automountServiceAccountToken: true
+
 
 # Pod configuration
 pod:
-  # Security context for the pod
-  securityContext: {}
   # Node selector for the pod
   nodeSelector: {}
   # Tolerations for the pod
   tolerations: []
   # Affinity rules for the pod
   affinity: {}
-  # Additional pod labels
-  labels: {}
-  # Additional pod annotations
-  annotations: {}
   # Pod topology spread constraints
   topologySpreadConstraints: []
-  # Pod disruption budget
-  disruptionBudget:
-    # minAvailable: 1
-    # maxUnavailable: 1
-    {}
-  # Pod priority class name
-  priorityClassName: ""
   # Additional volumes to add to the pod
   volumes: []
   # Additional volume mounts to add to the containers
   volumeMounts: []
   # Additional environment variables to set in the containers
   env: []
-  # Additional init containers to add to the pod
-  initContainers: []
-  # Additional sidecar containers to add to the pod
-  sidecarContainers: []
-  # Service account token volume mount path
-  serviceAccountTokenVolumeMountPath: "/var/run/secrets/kubernetes.io/serviceaccount"
