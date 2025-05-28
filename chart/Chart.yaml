@@ -2,7 +2,7 @@ apiVersion: v2
 name: mimir-sync
 description: A Helm chart for syncing Mimir alertmanager config and Prometheus rules
 type: application
-version: 1.0.7
+version: 1.0.8
 appVersion: "1.0.0"
 
 # A list of keywords as strings
