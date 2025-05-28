@@ -1,6 +1,6 @@
 # mimir-sync
 
-![Version: 1.0.1](https://img.shields.io/badge/Version-1.0.1-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 1.0.0](https://img.shields.io/badge/AppVersion-1.0.0-informational?style=flat-square)
+![Version: 1.0.2](https://img.shields.io/badge/Version-1.0.2-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 1.0.0](https://img.shields.io/badge/AppVersion-1.0.0-informational?style=flat-square)
 
 A Helm chart for syncing Mimir alertmanager config and Prometheus rules
 
@@ -25,6 +25,8 @@ A Helm chart for syncing Mimir alertmanager config and Prometheus rules
 | alertmanager.config.type | string | `"secret"` |  |
 | alertmanager.configPath | string | `"/config/config.yml"` |  |
 | alertmanager.enabled | bool | `true` |  |
+| alertmanager.extraVolumeMounts | list | `[]` |  |
+| alertmanager.extraVolumes | list | `[]` |  |
 | alertmanager.resources | object | `{}` |  |
 | alertmanagerConfig | string | `""` |  |
 | global.commonAnnotations | object | `{}` |  |
@@ -39,16 +41,8 @@ A Helm chart for syncing Mimir alertmanager config and Prometheus rules
 | mimir.address | string | `"http://mimir-distributed-nginx.mimir.svc.cluster.local:80"` |  |
 | mimir.tenantId | string | `"anonymous"` |  |
 | pod.affinity | object | `{}` |  |
-| pod.annotations | object | `{}` |  |
-| pod.disruptionBudget | object | `{}` |  |
 | pod.env | list | `[]` |  |
-| pod.initContainers | list | `[]` |  |
-| pod.labels | object | `{}` |  |
 | pod.nodeSelector | object | `{}` |  |
-| pod.priorityClassName | string | `""` |  |
-| pod.securityContext | object | `{}` |  |
-| pod.serviceAccountTokenVolumeMountPath | string | `"/var/run/secrets/kubernetes.io/serviceaccount"` |  |
-| pod.sidecarContainers | list | `[]` |  |
 | pod.tolerations | list | `[]` |  |
 | pod.topologySpreadConstraints | list | `[]` |  |
 | pod.volumeMounts | list | `[]` |  |
@@ -59,15 +53,12 @@ A Helm chart for syncing Mimir alertmanager config and Prometheus rules
 | rules.config.key | string | `"rules.yml"` |  |
 | rules.config.type | string | `"secret"` |  |
 | rules.enabled | bool | `true` |  |
+| rules.extraVolumeMounts | list | `[]` |  |
+| rules.extraVolumes | list | `[]` |  |
 | rules.resources | object | `{}` |  |
 | rules.rulesPath | string | `"/rules"` |  |
 | rules.url | string | `"http://mimir-ruler:8080"` |  |
 | serviceAccount.annotations | object | `{}` |  |
-| serviceAccount.annotations | object | `{}` |  |
-| serviceAccount.automountServiceAccountToken | bool | `true` |  |
 | serviceAccount.create | bool | `true` |  |
-| serviceAccount.create | bool | `true` |  |
-| serviceAccount.imagePullSecrets | list | `[]` |  |
-| serviceAccount.name | string | `""` |  |
 | serviceAccount.name | string | `""` |  |
 
