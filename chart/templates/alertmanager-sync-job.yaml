@@ -78,6 +78,7 @@ spec:
 
               # Run mimirtool to load the alertmanager config
               echo "Running mimirtool to load alertmanager config..."
+              echo "Executing: mimirtool alertmanager load \"$CONFIG_FILE\" $TEMPLATE_FILES --address=\"{{ .Values.mimir.address }}\" --id=\"{{ .Values.mimir.tenantId }}\" {{- if .Values.mimir.user }} --user=\"{{ .Values.mimir.user }}\" {{- end }} {{- if .Values.mimir.password }} --key=\"{{ .Values.mimir.password }}\" {{- end }}"
               mimirtool alertmanager load "$CONFIG_FILE" $TEMPLATE_FILES \
                 --address="{{ .Values.mimir.address }}" \
                 --id="{{ .Values.mimir.tenantId }}"
