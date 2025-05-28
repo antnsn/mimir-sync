@@ -56,6 +56,21 @@ alertmanager:
   # Enable or disable Alertmanager sync
   enabled: true
 
+  # Image pull secrets for the alertmanager sync job
+  imagePullSecrets: []
+
+  # Node selector for the alertmanager sync job
+  nodeSelector: {}
+
+  # Affinity rules for the alertmanager sync job
+  affinity: {}
+
+  # Tolerations for the alertmanager sync job
+  tolerations: []
+
+  # Resource requests and limits
+  topologySpreadConstraints: []
+
   # Configuration for Alertmanager config
   config:
     # Type of resource to use for Alertmanager config (configmap, secret, or none)
@@ -78,6 +93,12 @@ alertmanager:
     #   cpu: 50m
     #   memory: 64Mi
 
+  # Extra environment variables for the alertmanager sync job
+  extraEnv:
+    []
+    # - name: extra-env
+    #   value: extra-value
+
   # Extra volumes to mount in the alertmanager sync job
   extraVolumes:
     []
@@ -97,6 +118,21 @@ rules:
   # Enable or disable Rules sync
   enabled: true
 
+  # Image pull secrets for the alertmanager sync job
+  imagePullSecrets: []
+
+  # Node selector for the alertmanager sync job
+  nodeSelector: {}
+
+  # Affinity rules for the alertmanager sync job
+  affinity: {}
+
+  # Tolerations for the alertmanager sync job
+  tolerations: []
+
+  # Resource requests and limits
+  topologySpreadConstraints: []
+
   # Configuration for Rules config
   config:
     # Type of resource to use for Rules config (configmap, secret, or none)
@@ -110,6 +146,26 @@ rules:
   url: "http://mimir-ruler:8080"
   # Path to the Rules configuration directory in the container
   rulesPath: "/rules"
+
+  # Extra environment variables for the rules sync job
+  extraEnv:
+    []
+    # - name: extra-env
+    #   value: extra-value
+
+  # Extra volumes to mount in the alertmanager sync job
+  extraVolumes:
+    []
+    # - name: extra-config
+    #   configMap:
+    #     name: extra-alertmanager-config
+
+  # Extra volume mounts for the alertmanager sync job
+  extraVolumeMounts:
+    []
+    # - name: extra-config
+    #   mountPath: /extra-config
+    #   readOnly: true
 
   # Resource requests and limits
   resources:
@@ -202,20 +258,3 @@ prometheusRules:
   #           annotations:
   #             summary: Host out of disk space (instance {{ $labels.instance }})
   #             description: "Disk is almost full (< 10% left)\n  VALUE = {{ $value }}\n  LABELS = {{ $labels }}"
-
-# Pod configuration
-pod:
-  # Node selector for the pod
-  nodeSelector: {}
-  # Tolerations for the pod
-  tolerations: []
-  # Affinity rules for the pod
-  affinity: {}
-  # Pod topology spread constraints
-  topologySpreadConstraints: []
-  # Additional volumes to add to the pod
-  volumes: []
-  # Additional volume mounts to add to the containers
-  volumeMounts: []
-  # Additional environment variables to set in the containers
-  env: []
