@@ -85,9 +85,9 @@ update_gh_pages() {
     # Update or create the index.yaml
     echo -e "${YELLOW}Updating Helm repository index...${NC}"
     if [ -f index.yaml ]; then
-        helm repo index --url https://antnsn.github.io/mimir-sync --merge index.yaml charts/
+        helm repo index --url https://antnsn.github.io/mimir-sync --merge index.yaml .
     else
-        helm repo index --url https://antnsn.github.io/mimir-sync charts/
+        helm repo index --url https://antnsn.github.io/mimir-sync .
     fi
     
     # Commit and push changes to gh-pages
