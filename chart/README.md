@@ -1,6 +1,6 @@
 # mimir-sync
 
-![Version: 1.1.2](https://img.shields.io/badge/Version-1.1.2-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 1.0.0](https://img.shields.io/badge/AppVersion-1.0.0-informational?style=flat-square)
+![Version: 1.1.3](https://img.shields.io/badge/Version-1.1.3-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 1.0.0](https://img.shields.io/badge/AppVersion-1.0.0-informational?style=flat-square)
 
 A Helm chart for syncing Mimir alertmanager config and Prometheus rules
 
@@ -53,8 +53,6 @@ A Helm chart for syncing Mimir alertmanager config and Prometheus rules
 | rules.config.key | string | `"rules.yml"` |  |
 | rules.config.type | string | `"secret"` |  |
 | rules.enabled | bool | `true` |  |
-| rules.extraVolumeMounts | list | `[]` |  |
-| rules.extraVolumes | list | `[]` |  |
 | rules.resources | object | `{}` |  |
 | rules.rulesPath | string | `"/rules"` |  |
 | rules.url | string | `"http://mimir-ruler:8080"` |  |
