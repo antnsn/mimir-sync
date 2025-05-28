@@ -79,13 +79,15 @@ alertmanager:
     #   memory: 64Mi
 
   # Extra volumes to mount in the alertmanager sync job
-  extraVolumes: []
+  extraVolumes:
+    []
     # - name: extra-config
     #   configMap:
     #     name: extra-alertmanager-config
 
   # Extra volume mounts for the alertmanager sync job
-  extraVolumeMounts: []
+  extraVolumeMounts:
+    []
     # - name: extra-config
     #   mountPath: /extra-config
     #   readOnly: true
@@ -118,18 +120,6 @@ rules:
     # requests:
     #   cpu: 50m
     #   memory: 64Mi
-
-  # Extra volumes to mount in the rules sync job
-  extraVolumes: []
-    # - name: extra-rules
-    #   configMap:
-    #     name: extra-rules-config
-
-  # Extra volume mounts for the rules sync job
-  extraVolumeMounts: []
-    # - name: extra-rules
-    #   mountPath: /extra-rules
-    #   readOnly: true
 
 # Alertmanager configuration in YAML format
 alertmanagerConfig: ""
@@ -166,7 +156,8 @@ alertmanagerConfig: ""
 #               password: somePassword
 
 # Prometheus rules in YAML format
-prometheusRules: {}
+prometheusRules:
+  {}
   # node.yml: |
   #   groups:
   #     - name: node-exporter
@@ -211,8 +202,6 @@ prometheusRules: {}
   #           annotations:
   #             summary: Host out of disk space (instance {{ $labels.instance }})
   #             description: "Disk is almost full (< 10% left)\n  VALUE = {{ $value }}\n  LABELS = {{ $labels }}"
-
-
 
 # Pod configuration
 pod:
