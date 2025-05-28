@@ -111,7 +111,7 @@ spec:
               value: "{{ .Values.mimir.password }}"
             {{- end }}
             {{- with .Values.pod.env }}
-              {{- toYaml . | nindent 12 }}
+            {{- toYaml . | nindent 12 }}
             {{- end }}
       {{- with .Values.pod.imagePullSecrets }}
       imagePullSecrets:
@@ -156,6 +156,7 @@ spec:
         {{- with .Values.pod.volumes }}
         {{- toYaml . | nindent 8 }}
         {{- end }}
-  backoffLimit: 2
-  ttlSecondsAfterFinished: 3600  # Clean up completed jobs after 1 hour
-{{- end }}
+      backoffLimit: 2
+      ttlSecondsAfterFinished: 3600  # Clean up completed jobs after 1 hour
+    {{- end }}
+{{- end }}      
