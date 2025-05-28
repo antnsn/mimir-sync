@@ -114,14 +114,11 @@ spec:
               echo "Successfully synced all rules"
           {{- if ne .Values.rules.config.type "none" }}
           volumeMounts:
-            - name: rules-volume
+            - name: rules-config
               mountPath: /rules
               readOnly: true
           {{- end }}
           {{- with .Values.pod.volumeMounts }}
-            {{- toYaml . | nindent 10 }}
-          {{- end }}
-          {{- with .Values.rules.extraVolumeMounts }}
             {{- toYaml . | nindent 10 }}
           {{- end }}
           env:
@@ -159,29 +156,20 @@ spec:
       {{- with .Values.pod.topologySpreadConstraints }}
       topologySpreadConstraints:
         {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- if ne .Values.rules.config.type "none" }}
       volumes:
-        {{- if ne .Values.rules.config.type "none" }}
-        - name: rules-volume
+        - name: rules-config
           {{- if eq .Values.rules.config.type "configmap" }}
           configMap:
-            name: {{ .Values.rules.config.existingName | default .Values.rules.config.name }}
-            items:
-              - key: {{ .Values.rules.config.key | default "rules.yml" }}
-                path: {{ .Values.rules.config.key | default "rules.yml" }}
-          {{- else }}
+            name: {{ if .Values.rules.config.existingName }}{{ .Values.rules.config.existingName }}{{ else }}{{ include "mimir-sync.fullname" . }}-rules{{ end }}
+          {{- else if eq .Values.rules.config.type "secret" }}
           secret:
-            secretName: {{ .Values.rules.config.existingName | default .Values.rules.config.name }}
-            items:
-              - key: {{ .Values.rules.config.key | default "rules.yml" }}
-                path: {{ .Values.rules.config.key | default "rules.yml" }}
+            secretName: {{ if .Values.rules.config.existingName }}{{ .Values.rules.config.existingName }}{{ else }}{{ include "mimir-sync.fullname" . }}-rules-config{{ end }}
           {{- end }}
-        {{- end }}
-        {{- with .Values.rules.extraVolumes }}
+      {{- end }}
+      {{- with .Values.pod.volumes }}
         {{- toYaml . | nindent 8 }}
-        {{- end }}
-        {{- with .Values.pod.volumes }}
-        {{- toYaml . | nindent 8 }}
-        {{- end }}
       {{- end }}
   backoffLimit: 2
   ttlSecondsAfterFinished: 3600  # Clean up completed jobs after 1 hour
