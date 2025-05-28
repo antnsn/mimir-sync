@@ -86,7 +86,7 @@ spec:
               fi
           {{- if ne .Values.alertmanager.config.type "none" }}
           volumeMounts:
-            - name: alertmanager-config
+            - name: alertmanager-volume
               mountPath: /config
               readOnly: true
           {{- end }}
@@ -134,7 +134,7 @@ spec:
       {{- end }}
       volumes:
         {{- if ne .Values.alertmanager.config.type "none" }}
-        - name: alertmanager-config
+        - name: alertmanager-volume
           {{- if eq .Values.alertmanager.config.type "configmap" }}
           configMap:
             name: {{ .Values.alertmanager.config.existingName | default .Values.alertmanager.config.name }}

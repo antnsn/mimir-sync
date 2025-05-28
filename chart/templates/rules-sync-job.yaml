@@ -114,7 +114,7 @@ spec:
               echo "Successfully synced all rules"
           {{- if ne .Values.rules.config.type "none" }}
           volumeMounts:
-            - name: rules-config
+            - name: rules-volume
               mountPath: /rules
               readOnly: true
           {{- end }}
@@ -161,7 +161,7 @@ spec:
         {{- toYaml . | nindent 8 }}
       volumes:
         {{- if ne .Values.rules.config.type "none" }}
-        - name: rules-config
+        - name: rules-volume
           {{- if eq .Values.rules.config.type "configmap" }}
           configMap:
             name: {{ .Values.rules.config.existingName | default .Values.rules.config.name }}
