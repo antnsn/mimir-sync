@@ -93,6 +93,9 @@ spec:
           {{- with .Values.pod.volumeMounts }}
             {{- toYaml . | nindent 10 }}
           {{- end }}
+          {{- with .Values.alertmanager.extraVolumeMounts }}
+            {{- toYaml . | nindent 10 }}
+          {{- end }}
           env:
             - name: MIMIR_ADDRESS
               value: "{{ .Values.mimir.address }}"
@@ -129,17 +132,20 @@ spec:
       topologySpreadConstraints:
         {{- toYaml . | nindent 8 }}
       {{- end }}
-      {{- if ne .Values.alertmanager.config.type "none" }}
       volumes:
+        {{- if ne .Values.alertmanager.config.type "none" }}
         - name: alertmanager-config
           {{- if eq .Values.alertmanager.config.type "configmap" }}
           configMap:
-            name: {{ if .Values.alertmanager.config.existingName }}{{ .Values.alertmanager.config.existingName }}{{ else }}{{ include "mimir-sync.fullname" . }}-alertmanager{{ end }}
-          {{- else if eq .Values.alertmanager.config.type "secret" }}
+            name: {{ .Values.alertmanager.config.name }}
+          {{- else }}
           secret:
-            secretName: {{ if .Values.alertmanager.config.existingName }}{{ .Values.alertmanager.config.existingName }}{{ else }}{{ include "mimir-sync.fullname" . }}-alertmanager-config{{ end }}
+            secretName: {{ .Values.alertmanager.config.name }}
           {{- end }}
-      {{- end }}
+        {{- end }}
+        {{- with .Values.alertmanager.extraVolumes }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
       {{- with .Values.pod.volumes }}
         {{- toYaml . | nindent 8 }}
       {{- end }}
