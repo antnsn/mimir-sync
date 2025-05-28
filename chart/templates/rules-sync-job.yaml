@@ -165,17 +165,23 @@ spec:
           {{- if eq .Values.rules.config.type "configmap" }}
           configMap:
             name: {{ .Values.rules.config.existingName | default .Values.rules.config.name }}
+            items:
+              - key: {{ .Values.rules.config.key | default "rules.yml" }}
+                path: {{ .Values.rules.config.key | default "rules.yml" }}
           {{- else }}
           secret:
             secretName: {{ .Values.rules.config.existingName | default .Values.rules.config.name }}
+            items:
+              - key: {{ .Values.rules.config.key | default "rules.yml" }}
+                path: {{ .Values.rules.config.key | default "rules.yml" }}
           {{- end }}
         {{- end }}
         {{- with .Values.rules.extraVolumes }}
         {{- toYaml . | nindent 8 }}
         {{- end }}
-      {{- end }}
-      {{- with .Values.pod.volumes }}
+        {{- with .Values.pod.volumes }}
         {{- toYaml . | nindent 8 }}
+        {{- end }}
       {{- end }}
   backoffLimit: 2
   ttlSecondsAfterFinished: 3600  # Clean up completed jobs after 1 hour
