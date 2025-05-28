@@ -137,10 +137,10 @@ spec:
         - name: alertmanager-config
           {{- if eq .Values.alertmanager.config.type "configmap" }}
           configMap:
-            name: {{ .Values.alertmanager.config.name }}
+            name: {{ .Values.alertmanager.config.existingName | default .Values.alertmanager.config.name }}
           {{- else }}
           secret:
-            secretName: {{ .Values.alertmanager.config.name }}
+            secretName: {{ .Values.alertmanager.config.existingName | default .Values.alertmanager.config.name }}
           {{- end }}
         {{- end }}
         {{- with .Values.alertmanager.extraVolumes }}

@@ -164,10 +164,10 @@ spec:
         - name: rules-config
           {{- if eq .Values.rules.config.type "configmap" }}
           configMap:
-            name: {{ .Values.rules.config.name }}
+            name: {{ .Values.rules.config.existingName | default .Values.rules.config.name }}
           {{- else }}
           secret:
-            secretName: {{ .Values.rules.config.name }}
+            secretName: {{ .Values.rules.config.existingName | default .Values.rules.config.name }}
           {{- end }}
         {{- end }}
         {{- with .Values.rules.extraVolumes }}
