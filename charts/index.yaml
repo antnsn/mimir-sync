@@ -1,0 +1,56 @@
+apiVersion: v1
+entries:
+  mimir-sync:
+  - apiVersion: v2
+    appVersion: 1.0.0
+    created: "2025-05-28T22:37:38.660533+02:00"
+    description: A Helm chart for syncing Mimir alertmanager config and Prometheus
+      rules
+    digest: 38755779d34a381901a090e3b730c00364a5630edb097098c5812f108995fa88
+    home: https://github.com/antnsn/mimir-sync
+    icon: https://raw.githubusercontent.com/antnsn/mimir-sync/main/assets/logo/logo.svg
+    keywords:
+    - monitoring
+    - alerting
+    - prometheus
+    - mimir
+    - kubernetes
+    - helm
+    maintainers:
+    - email: me@antnsn.dev
+      name: antnsn
+      url: https://github.com/antnsn
+    name: mimir-sync
+    sources:
+    - https://github.com/antnsn/mimir-sync
+    type: application
+    urls:
+    - https://antnsn.github.io/mimir-sync/mimir-sync-1.0.4.tgz
+    version: 1.0.4
+  - apiVersion: v2
+    appVersion: 1.0.0
+    created: "2025-05-28T22:37:38.660209+02:00"
+    description: A Helm chart for syncing Mimir alertmanager config and Prometheus
+      rules
+    digest: b0be0aec2e0165c089ae26be9a7a276243f37fd48d8d06b3dda483b1b8479187
+    home: https://github.com/antnsn/mimir-sync
+    icon: https://raw.githubusercontent.com/antnsn/mimir-sync/main/assets/logo/logo.svg
+    keywords:
+    - monitoring
+    - alerting
+    - prometheus
+    - mimir
+    - kubernetes
+    - helm
+    maintainers:
+    - email: me@antnsn.dev
+      name: antnsn
+      url: https://github.com/antnsn
+    name: mimir-sync
+    sources:
+    - https://github.com/antnsn/mimir-sync
+    type: application
+    urls:
+    - https://antnsn.github.io/mimir-sync/mimir-sync-1.0.0.tgz
+    version: 1.0.0
+generated: "2025-05-28T22:37:38.659431+02:00"
