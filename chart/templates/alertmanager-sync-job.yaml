@@ -91,7 +91,7 @@ spec:
               readOnly: true
           {{- end }}
           {{- with .Values.alertmanager.extraVolumeMounts }}
-            {{- toYaml . | nindent 10 }}
+            {{- toYaml . | nindent 12 }}
           {{- end }}
           env:
             - name: MIMIR_ADDRESS
