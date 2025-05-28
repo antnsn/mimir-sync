@@ -58,6 +58,54 @@ run_helm_lint() {
     echo -e "${GREEN}✓ Helm lint passed${NC}"
 }
 
+# Function to package the helm chart and update the gh-pages branch
+update_gh_pages() {
+    echo -e "${YELLOW}Packaging Helm chart and updating GitHub Pages...${NC}"
+    
+    # Create a temporary directory
+    local temp_dir=$(mktemp -d)
+    echo -e "${YELLOW}Using temporary directory: ${temp_dir}${NC}"
+    
+    # Package the chart
+    echo -e "${YELLOW}Packaging chart...${NC}"
+    helm package chart/ -d "${temp_dir}/charts"
+    
+    # Save current branch
+    local current_branch=$(git rev-parse --abbrev-ref HEAD)
+    
+    # Switch to gh-pages branch
+    echo -e "${YELLOW}Switching to gh-pages branch...${NC}"
+    git fetch origin gh-pages
+    git checkout gh-pages
+    
+    # Copy the packaged chart
+    mkdir -p charts
+    cp "${temp_dir}/charts/mimir-sync-${NEW_VERSION}.tgz" charts/
+    
+    # Update or create the index.yaml
+    echo -e "${YELLOW}Updating Helm repository index...${NC}"
+    if [ -f index.yaml ]; then
+        helm repo index --url https://antnsn.github.io/mimir-sync --merge index.yaml charts/
+    else
+        helm repo index --url https://antnsn.github.io/mimir-sync charts/
+    fi
+    
+    # Commit and push changes to gh-pages
+    echo -e "${YELLOW}Committing and pushing changes to gh-pages branch...${NC}"
+    git add charts/ index.yaml
+    git commit -m "chore: release chart v${NEW_VERSION}"
+    git push origin gh-pages
+    
+    # Switch back to original branch
+    echo -e "${YELLOW}Switching back to ${current_branch} branch...${NC}"
+    git checkout "${current_branch}"
+    
+    # Clean up
+    rm -rf "${temp_dir}"
+    
+    echo -e "${GREEN}✓ GitHub Pages updated with new chart version${NC}"
+}
+
 # Function to update documentation
 update_docs() {
     echo -e "${YELLOW}Updating documentation...${NC}"
@@ -143,12 +191,14 @@ else
     echo -e "${YELLOW}Pushing changes to remote...${NC}"
     git push origin main
     git push origin "v${NEW_VERSION}"
+    
+    # Update GitHub Pages
+    update_gh_pages
 fi
 
 echo -e "\n${GREEN}✓ Release v${NEW_VERSION} has been initiated!${NC}"
-echo "The GitHub Actions workflow will now build and publish the new version."
-echo "You can monitor the progress at: https://github.com/antnsn/mimir-sync/actions"
-echo -e "${YELLOW}Once the workflow completes, the new version will be available at:${NC}"
+echo -e "${GREEN}✓ GitHub Pages has been updated with the new chart version${NC}"
+echo -e "${YELLOW}The new version is now available at:${NC}"
 echo "https://antnsn.github.io/mimir-sync/"
 
 # Instructions for GitHub release
