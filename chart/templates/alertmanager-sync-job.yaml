@@ -64,9 +64,21 @@ spec:
               # Log the config file path for debugging
               echo "Syncing $CONFIG_FILE to Mimir..."
 
+              # Check for templates in the templates directory
+              TEMPLATE_FILES=""
+              if [ -d "/etc/alertmanager/templates" ] && [ "$(ls -A /etc/alertmanager/templates)" ]; then
+                echo "Found template files in /etc/alertmanager/templates"
+                for template in /etc/alertmanager/templates/*; do
+                  if [ -f "$template" ]; then
+                    echo "Adding template: $template"
+                    TEMPLATE_FILES="$TEMPLATE_FILES $template"
+                  fi
+                done
+              fi
+
               # Run mimirtool to load the alertmanager config
               echo "Running mimirtool to load alertmanager config..."
-              mimirtool alertmanager load "$CONFIG_FILE" \
+              mimirtool alertmanager load "$CONFIG_FILE" $TEMPLATE_FILES \
                 --address="{{ .Values.mimir.address }}" \
                 --id="{{ .Values.mimir.tenantId }}"
                 {{- if .Values.mimir.user }}
