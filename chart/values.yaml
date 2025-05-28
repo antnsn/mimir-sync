@@ -100,17 +100,27 @@ alertmanager:
     #   value: extra-value
 
   # Extra volumes to mount in the alertmanager sync job
+  # Templates can be mounted at /etc/alertmanager/templates to be automatically
+  # detected and used with the 'mimirtool alertmanager load' command
   extraVolumes:
     []
-    # - name: extra-config
+    # Example for alertmanager templates:
+    # - name: templates-volume
+    #   emptyDir: {}
+    # - name: templates-configmap
     #   configMap:
-    #     name: extra-alertmanager-config
+    #     name: alertmanager-templates
 
   # Extra volume mounts for the alertmanager sync job
+  # Mount templates to /etc/alertmanager/templates to be automatically used
   extraVolumeMounts:
     []
-    # - name: extra-config
-    #   mountPath: /extra-config
+    # Example for alertmanager templates:
+    # - name: templates-volume
+    #   mountPath: /etc/alertmanager/templates
+    #   readOnly: true
+    # - name: templates-configmap
+    #   mountPath: /etc/alertmanager/templates
     #   readOnly: true
 
 # Rules sync configuration
