@@ -86,16 +86,17 @@ spec:
               fi
           {{- if ne .Values.alertmanager.config.type "none" }}
           volumeMounts:
+            {{- if ne .Values.alertmanager.config.type "none" }}
             - name: alertmanager-volume
               mountPath: /config
               readOnly: true
-          {{- end }}
-          {{- with .Values.pod.volumeMounts }}
-            {{- toYaml . | nindent 10 }}
-          {{- end }}
-          {{- with .Values.alertmanager.extraVolumeMounts }}
-            {{- toYaml . | nindent 10 }}
-          {{- end }}
+            {{- end }}
+            {{- with .Values.pod.volumeMounts }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
+            {{- with .Values.alertmanager.extraVolumeMounts }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
           env:
             - name: MIMIR_ADDRESS
               value: "{{ .Values.mimir.address }}"
