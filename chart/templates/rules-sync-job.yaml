@@ -168,7 +168,7 @@ spec:
             secretName: {{ if .Values.rules.config.existingName }}{{ .Values.rules.config.existingName }}{{ else }}{{ include "mimir-sync.fullname" . }}-rules-config{{ end }}
           {{- end }}
       {{- end }}
-      {{- with .Values.rules.volumes }}
+      {{- with .Values.rules.extraVolumes }}
         {{- toYaml . | nindent 8 }}
       {{- end }}
   backoffLimit: 2
