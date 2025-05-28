@@ -32,7 +32,7 @@ spec:
             {{- toYaml .Values.securityContext | nindent 12 }}
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
-          {{- with .Values.pod.resources }}
+          {{- with .Values.rules.resources }}
           resources:
             {{- toYaml . | nindent 12 }}
           {{- end }}
@@ -118,7 +118,7 @@ spec:
               mountPath: /rules
               readOnly: true
           {{- end }}
-          {{- with .Values.pod.volumeMounts }}
+          {{- with .Values.rules.extraVolumeMounts }}
             {{- toYaml . | nindent 10 }}
           {{- end }}
           env:
@@ -134,26 +134,26 @@ spec:
             - name: MIMIR_PASSWORD
               value: "{{ .Values.mimir.password }}"
             {{- end }}
-            {{- with .Values.pod.env }}
+            {{- with .Values.rules.extraEnv }}
               {{- toYaml . | nindent 12 }}
             {{- end }}
-      {{- with .Values.pod.imagePullSecrets }}
+      {{- with .Values.rules.imagePullSecrets }}
       imagePullSecrets:
         {{- toYaml . | nindent 8 }}
       {{- end }}
-      {{- with .Values.pod.nodeSelector }}
+      {{- with .Values.rules.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}
       {{- end }}
-      {{- with .Values.pod.affinity }}
+      {{- with .Values.rules.affinity }}
       affinity:
         {{- toYaml . | nindent 8 }}
       {{- end }}
-      {{- with .Values.pod.tolerations }}
+      {{- with .Values.rules.tolerations }}
       tolerations:
         {{- toYaml . | nindent 8 }}
       {{- end }}
-      {{- with .Values.pod.topologySpreadConstraints }}
+      {{- with .Values.rules.topologySpreadConstraints }}
       topologySpreadConstraints:
         {{- toYaml . | nindent 8 }}
       {{- end }}
@@ -168,7 +168,7 @@ spec:
             secretName: {{ if .Values.rules.config.existingName }}{{ .Values.rules.config.existingName }}{{ else }}{{ include "mimir-sync.fullname" . }}-rules-config{{ end }}
           {{- end }}
       {{- end }}
-      {{- with .Values.pod.volumes }}
+      {{- with .Values.rules.volumes }}
         {{- toYaml . | nindent 8 }}
       {{- end }}
   backoffLimit: 2
