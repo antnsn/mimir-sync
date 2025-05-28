@@ -26,8 +26,7 @@ spec:
       {{- end }}
       serviceAccountName: {{ include "mimir-sync.serviceAccountName" . }}
       restartPolicy: OnFailure
-      backoffLimit: 2
-      ttlSecondsAfterFinished: 3600  # Clean up completed jobs after 1 hour      
+      backoffLimit: 2  
       containers:
         - name: alertmanager-sync
           securityContext:
@@ -158,5 +157,6 @@ spec:
         {{- with .Values.pod.volumes }}
         {{- toYaml . | nindent 8 }}
         {{- end }}
+      ttlSecondsAfterFinished: 3600  # Clean up completed jobs after 1 hour
     {{- end }}
 {{- end }}      
