@@ -3,7 +3,33 @@ entries:
   mimir-sync:
   - apiVersion: v2
     appVersion: 1.0.0
-    created: "2025-05-28T23:19:31.776541+02:00"
+    created: "2025-05-28T23:28:42.816546+02:00"
+    description: A Helm chart for syncing Mimir alertmanager config and Prometheus
+      rules
+    digest: da2229f27ec3624a68eebcd0672d114391ad6a67b85764b24a2ae9e48642ba28
+    home: https://github.com/antnsn/mimir-sync
+    icon: https://raw.githubusercontent.com/antnsn/mimir-sync/main/assets/logo/logo.svg
+    keywords:
+    - monitoring
+    - alerting
+    - prometheus
+    - mimir
+    - kubernetes
+    - helm
+    maintainers:
+    - email: me@antnsn.dev
+      name: antnsn
+      url: https://github.com/antnsn
+    name: mimir-sync
+    sources:
+    - https://github.com/antnsn/mimir-sync
+    type: application
+    urls:
+    - https://antnsn.github.io/mimir-sync/charts/mimir-sync-1.1.3.tgz
+    version: 1.1.3
+  - apiVersion: v2
+    appVersion: 1.0.0
+    created: "2025-05-28T23:28:42.816315+02:00"
     description: A Helm chart for syncing Mimir alertmanager config and Prometheus
       rules
     digest: beea0f440796f5ee12b00fe8106d5544179d3f2a0a9b9a656f668f79bf6637cf
@@ -29,7 +55,7 @@ entries:
     version: 1.1.2
   - apiVersion: v2
     appVersion: 1.0.0
-    created: "2025-05-28T23:19:31.776255+02:00"
+    created: "2025-05-28T23:28:42.816078+02:00"
     description: A Helm chart for syncing Mimir alertmanager config and Prometheus
       rules
     digest: b5b8048b1173656cffc3489392a8b529dcfde7166afd5ff5bca5126e3ae90e60
@@ -55,7 +81,7 @@ entries:
     version: 1.1.0
   - apiVersion: v2
     appVersion: 1.0.0
-    created: "2025-05-28T23:19:31.77579+02:00"
+    created: "2025-05-28T23:28:42.815838+02:00"
     description: A Helm chart for syncing Mimir alertmanager config and Prometheus
       rules
     digest: bb833d8515dd677c3960c4a2fbd9ef0f8f1a35f99e2e9464e0562816105ec95e
@@ -81,7 +107,7 @@ entries:
     version: 1.0.8
   - apiVersion: v2
     appVersion: 1.0.0
-    created: "2025-05-28T23:19:31.775192+02:00"
+    created: "2025-05-28T23:28:42.815588+02:00"
     description: A Helm chart for syncing Mimir alertmanager config and Prometheus
       rules
     digest: 1ae5e41746fca51e4179b5b72bcb24910181d62efaea3a4f19dd4eb1fcf93b2f
@@ -107,7 +133,7 @@ entries:
     version: 1.0.6
   - apiVersion: v2
     appVersion: 1.0.0
-    created: "2025-05-28T23:19:31.774901+02:00"
+    created: "2025-05-28T23:28:42.81534+02:00"
     description: A Helm chart for syncing Mimir alertmanager config and Prometheus
       rules
     digest: 38755779d34a381901a090e3b730c00364a5630edb097098c5812f108995fa88
@@ -133,7 +159,7 @@ entries:
     version: 1.0.4
   - apiVersion: v2
     appVersion: 1.0.0
-    created: "2025-05-28T23:19:31.774559+02:00"
+    created: "2025-05-28T23:28:42.815071+02:00"
     description: A Helm chart for syncing Mimir alertmanager config and Prometheus
       rules
     digest: b0be0aec2e0165c089ae26be9a7a276243f37fd48d8d06b3dda483b1b8479187
@@ -157,4 +183,4 @@ entries:
     urls:
     - https://antnsn.github.io/mimir-sync/charts/mimir-sync-1.0.0.tgz
     version: 1.0.0
-generated: "2025-05-28T23:19:31.773955+02:00"
+generated: "2025-05-28T23:28:42.814321+02:00"
