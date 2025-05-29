@@ -37,66 +37,17 @@ spec:
             {{- toYaml . | nindent 12 }}
           {{- end }}
           command:
-            - /bin/sh
-            - -c
-            - |
-              # Get the alertmanager config from ConfigMap/Secret
-              CONFIG_FILE=/tmp/alertmanager-config.yml
-              echo "Copying config file from {{ if eq .Values.alertmanager.config.type "configmap" }}ConfigMap{{ else }}Secret{{ end }}..."
-              cat /config/{{ .Values.alertmanager.config.key }} > $CONFIG_FILE
-
-              # Verify the file exists and show contents
-              ls -la /config/
-              ls -la /tmp/
-              echo "Config file contents (first 100 chars):"
-              head -c 100 $CONFIG_FILE
-              echo -e "\n... (truncated)"
-
-              if [ ! -f "$CONFIG_FILE" ]; then
-                echo "Error: Config file not found at $CONFIG_FILE"
-                exit 1
-              fi
-
-              # Verify the alertmanager config before syncing
-              echo "Verifying $CONFIG_FILE before syncing..."
-              mimirtool alertmanager verify "$CONFIG_FILE"
-
-              # Log the config file path for debugging
-              echo "Syncing $CONFIG_FILE to Mimir..."
-
-              # Check for templates in the templates directory
-              TEMPLATE_FILES=""
-              if [ -d "/etc/alertmanager/templates" ] && [ "$(ls -A /etc/alertmanager/templates)" ]; then
-                echo "Found template files in /etc/alertmanager/templates"
-                for template in /etc/alertmanager/templates/*; do
-                  if [ -f "$template" ]; then
-                    echo "Adding template: $template"
-                    TEMPLATE_FILES="$TEMPLATE_FILES $template"
-                  fi
-                done
-              fi
-
-              # Run mimirtool to load the alertmanager config
-              echo "Running mimirtool to load alertmanager config..."
-              echo "Executing: mimirtool alertmanager load \"$CONFIG_FILE\" $TEMPLATE_FILES --address=\"{{ .Values.mimir.address }}\" --id=\"{{ .Values.mimir.tenantId }}\" {{- if .Values.mimir.user }} --user=\"{{ .Values.mimir.user }}\" {{- end }} {{- if .Values.mimir.password }} --key=\"{{ .Values.mimir.password }}\" {{- end }}"
-              mimirtool alertmanager load "$CONFIG_FILE" $TEMPLATE_FILES \
-                --address="{{ .Values.mimir.address }}" \
-                --id="{{ .Values.mimir.tenantId }}"
-                {{- if .Values.mimir.user }}
-                --user="{{ .Values.mimir.user }}"
-                {{- end }}
-                {{- if .Values.mimir.password }}
-                --key="{{ .Values.mimir.password }}"
-                {{- end }}
-                
-              # Check the exit code
-              RESULT=$?
-              if [ $RESULT -ne 0 ]; then
-                echo "Error: mimirtool failed with exit code $RESULT"
-                exit $RESULT
-              else
-                echo "Successfully loaded alertmanager config"
-              fi
+            - mal-sync
+            - alertmanager
+            - --config.file=/config/{{ .Values.alertmanager.config.key }}
+            - --templates.dir={{ .Values.alertmanager.templatesPathInContainer }}
+            - --mimir.address={{ .Values.mimir.address }}
+            - --mimir.id={{ .Values.mimir.tenantId }}
+            {{- if .Values.alertmanager.syncTempDir }}
+            - --temp.dir={{ .Values.alertmanager.syncTempDir }}
+            {{- end }}
+            # MIMIR_USER and MIMIR_PASSWORD (ideally MIMIR_API_KEY) environment variables are already set for the container.
+            # mal-sync's call to mimirtool will rely on mimirtool picking up these environment variables for authentication.
           {{- if ne .Values.alertmanager.config.type "none" }}
           volumeMounts:
             - name: alertmanager-config
