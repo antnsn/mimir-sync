@@ -1,0 +1,110 @@
+{{- if .Values.lokiRules.enabled }}
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ include "mimir-sync.fullname" . }}-loki-rules-sync
+  labels:
+    {{- include "mimir-sync.labels" . | nindent 4 }}
+    app.kubernetes.io/component: loki-rules-sync
+  annotations:
+    {{- if ne .Values.lokiRules.config.type "none" }}
+    reloader.stakater.com/auto: "true"
+    {{- if eq .Values.lokiRules.config.type "configmap" }}
+    reloader.stakater.com/search: "true"
+    {{- end }}
+    {{- end }}
+spec:
+  template:
+    metadata:
+      labels:
+        {{- include "mimir-sync.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: loki-rules-sync
+    spec:
+      {{- with .Values.lokiRules.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "mimir-sync.serviceAccountName" . }}
+      restartPolicy: OnFailure
+      containers:
+        - name: loki-rules-sync
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          {{- with .Values.lokiRules.resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          command:
+            - mal-sync
+            - loki-rules
+            - --rules.path={{ .Values.lokiRules.rulesPathInContainer | default "/loki-rules" }}
+            - --loki.address={{ .Values.loki.address }}
+            - --loki.id={{ .Values.loki.tenantId }}
+            - --rules.namespace={{ .Values.namespaces.loki }}
+            {{- if .Values.lokiRules.syncTempDir }}
+            - --temp.dir={{ .Values.lokiRules.syncTempDir }}
+            {{- end }}
+            # LOKI_USERNAME and LOKI_PASSWORD (ideally LOKI_API_KEY) environment variables are set below for the container.
+            # mal-sync's call to lokitool will rely on lokitool picking up these environment variables for authentication.
+          {{- if ne .Values.lokiRules.config.type "none" }}
+          volumeMounts:
+            - name: loki-rules-config
+              mountPath: {{ .Values.lokiRules.rulesPathInContainer | default "/loki-rules" }}
+              readOnly: true
+          {{- end }}
+          {{- with .Values.lokiRules.extraVolumeMounts }}
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          env:
+            - name: LOKI_ADDRESS
+              value: "{{ .Values.loki.address }}"
+            - name: LOKI_TENANT_ID
+              value: "{{ .Values.loki.tenantId }}"
+            {{- if .Values.loki.user }}
+            - name: LOKI_USERNAME
+              value: "{{ .Values.loki.user }}"
+            {{- end }}
+            {{- if .Values.loki.password }}
+            # Note: lokitool might expect LOKI_API_KEY for token-based auth, or LOKI_USERNAME/LOKI_PASSWORD for basic auth.
+            # Ensure mal-sync loki-rules correctly translates or lokitool picks up the right variables.
+            - name: LOKI_PASSWORD 
+              value: "{{ .Values.loki.password }}"
+            {{- end }}
+            {{- with .Values.lokiRules.extraEnv }}
+              {{- toYaml . | nindent 12 }}
+            {{- end }}
+      {{- with .Values.lokiRules.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.lokiRules.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.lokiRules.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.lokiRules.topologySpreadConstraints }}
+      topologySpreadConstraints:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- if ne .Values.lokiRules.config.type "none" }}
+      volumes:
+        - name: loki-rules-config
+          {{- if eq .Values.lokiRules.config.type "configmap" }}
+          configMap:
+            name: {{ if .Values.lokiRules.config.existingName }}{{ .Values.lokiRules.config.existingName }}{{ else }}{{ include "mimir-sync.fullname" . }}-loki-rules{{ end }}
+          {{- else if eq .Values.lokiRules.config.type "secret" }}
+          secret:
+            secretName: {{ if .Values.lokiRules.config.existingName }}{{ .Values.lokiRules.config.existingName }}{{ else }}{{ include "mimir-sync.fullname" . }}-loki-rules-config{{ end }}
+          {{- end }}
+      {{- end }}
+      {{- with .Values.lokiRules.extraVolumes }}
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+  backoffLimit: {{ .Values.lokiRules.backoffLimit | default 2 }}
+  ttlSecondsAfterFinished: {{ .Values.lokiRules.ttlSecondsAfterFinished | default 3600 }} # Clean up completed jobs
+{{- end }}
