@@ -41,8 +41,7 @@ spec:
             - loki-rules
             - --rules.path={{ .Values.lokiRules.rulesPathInContainer | default "/loki-rules" }}
             - --loki.address={{ .Values.loki.address }}
-            - --loki.id={{ .Values.loki.tenantId }}
-            - --rules.namespace={{ .Values.namespaces.loki }}
+            - --loki.org-id=anonymous # Corrected flag name
             {{- if .Values.lokiRules.syncTempDir }}
             - --temp.dir={{ .Values.lokiRules.syncTempDir }}
             {{- end }}
