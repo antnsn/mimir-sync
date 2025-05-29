@@ -7,7 +7,7 @@
 # Image configuration
 image:
   repository: ghcr.io/antnsn/mal-sync
-  tag: v1.0.0
+  tag: latest
   pullPolicy: IfNotPresent
 
 # Global configuration

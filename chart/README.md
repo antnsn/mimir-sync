@@ -1,6 +1,6 @@
 # mimir-sync
 
-![Version: 2.0.0](https://img.shields.io/badge/Version-2.0.0-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 1.0.0](https://img.shields.io/badge/AppVersion-1.0.0-informational?style=flat-square)
+![Version: 2.0.0](https://img.shields.io/badge/Version-2.0.0-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 2.0.0](https://img.shields.io/badge/AppVersion-2.0.0-informational?style=flat-square)
 
 A Helm chart for syncing Mimir and Loki configurations including alertmanager config and rules
 
@@ -44,7 +44,7 @@ A Helm chart for syncing Mimir and Loki configurations including alertmanager co
 | global.namespace | string | `"mimir-sync"` |  |
 | image.pullPolicy | string | `"IfNotPresent"` |  |
 | image.repository | string | `"ghcr.io/antnsn/mal-sync"` |  |
-| image.tag | string | `"v1.0.0"` |  |
+| image.tag | string | `"latest"` |  |
 | loki.address | string | `"http://loki-distributed-gateway.loki.svc.cluster.local"` |  |
 | loki.tenantId | string | `"anonymous"` |  |
 | lokiRules.affinity | object | `{}` |  |
