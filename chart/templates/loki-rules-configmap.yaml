@@ -1,0 +1,14 @@
+{{- if and (eq .Values.lokiRules.config.type "configmap") (not .Values.lokiRules.config.existingName) -}}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "mimir-sync.fullname" . }}-loki-rules
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "mimir-sync.labels" . | nindent 4 }}
+data:
+  {{- range $key, $value := .Values.lokiRules.rules }}
+  {{ $key }}: |
+    {{- $value | nindent 4 }}
+  {{- end }}
+{{- end -}}

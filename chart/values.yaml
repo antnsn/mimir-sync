@@ -75,6 +75,23 @@ lokiRules:
   # Optional: Temporary directory for mal-sync to stage files (used for mal-sync --temp.dir)
   # syncTempDir: "/tmp/mal-sync-lokirules"
 
+  # Loki rules definitions to be used when config.type is 'configmap' or 'secret' and no existingName is provided
+  # Each key will be a separate file in the ConfigMap/Secret
+  rules:
+    {}
+    # example-rules.yaml: |
+    #   groups:
+    #   - name: example
+    #     rules:
+    #     - alert: HighLogRate
+    #       expr: sum(rate({app="foo"}[5m])) > 100
+    #       for: 10m
+    #       labels:
+    #         severity: warning
+    #       annotations:
+    #         summary: High log rate for app foo
+    #         description: Log rate for app foo is above 100 logs per second for the last 10 minutes
+
   # Resource requests and limits for the loki-rules sync job
   resources:
     {}
