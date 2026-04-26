@@ -1,42 +1,35 @@
-{{- define "custom.usage" -}}
-{{- if .Values.usage }}
-{{ .Values.usage | nindent 4 }}
-{{- else }}
-```yaml
-## Example Usage
+{{ template "chart.header" . }}
 
-```yaml
-# values.yaml
-{{ .Values | toYaml | indent 2 }}
-```
-{{- end }}
-{{- end -}}
+{{ template "chart.description" . }}
 
-# {{ .Chart.Name }}
+{{ template "chart.versionBadge" . }}{{ template "chart.typeBadge" . }}{{ template "chart.appVersionBadge" . }}
 
-{{ .Chart.Description | nindent 2 }}
+`mimir-sync` is a Helm chart that deploys Kubernetes Jobs which use
+[`mal-sync`](https://github.com/antnsn/mal-sync) — a thin wrapper around
+[`mimirtool`](https://grafana.com/docs/mimir/latest/manage/tools/mimirtool/)
+and [`lokitool`](https://grafana.com/docs/loki/latest/alert/#lokitool) — to
+keep Alertmanager configuration, Prometheus recording/alerting rules, and Loki
+recording/alerting rules in sync with a Mimir/Loki deployment.
 
-{{- if .Chart.Homepage }}
-**Homepage:** <{{ .Chart.Homepage }}>
-{{- end }}
-
-## Installation
+## Installing
 
 ```bash
 helm repo add mimir-sync https://antnsn.github.io/mimir-sync
-helm install my-release mimir-sync/{{ .Chart.Name }} --version {{ .Chart.Version }}
+helm repo update
+helm install mimir-sync mimir-sync/mimir-sync \
+  --namespace mimir-sync --create-namespace \
+  --set mimir.address=http://mimir-distributed-nginx.mimir.svc.cluster.local:80 \
+  --set mimir.tenantId=anonymous
 ```
 
-## Configuration
+{{ template "chart.maintainersSection" . }}
 
-| Parameter | Description | Default |
-|-----------|-------------|---------|
-{{- range $key, $value := .Values }}
-| `{{ $key }}` | {{ $value.description | default "" }} | `{{ $value | toYaml }}` |
-{{- end }}
+{{ template "chart.sourcesSection" . }}
 
-## Maintainers
+{{ template "chart.requirementsSection" . }}
 
-{{- range $index, $maintainer := .Chart.Maintainers }}
-- {{ $maintainer.Name }} ({{ $maintainer.URL }})
-{{- end }}
+{{ template "chart.valuesHeader" . }}
+
+{{ template "chart.valuesTable" . }}
+
+{{ template "helm-docs.versionFooter" . }}

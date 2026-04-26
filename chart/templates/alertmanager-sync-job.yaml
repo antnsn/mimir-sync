@@ -1,78 +1,34 @@
-{{- if .Values.alertmanager.enabled }}
+{{- if .Values.alertmanager.enabled -}}
+{{- $hasBuiltin := ne .Values.alertmanager.config.type "none" -}}
+{{- $reload := or $hasBuiltin .Values.alertmanager.config.existingName -}}
 apiVersion: batch/v1
 kind: Job
 metadata:
   name: {{ include "mimir-sync.fullname" . }}-alertmanager-sync
+  namespace: {{ .Release.Namespace }}
   labels:
     {{- include "mimir-sync.labels" . | nindent 4 }}
     app.kubernetes.io/component: alertmanager-sync
+  {{- if or .Values.commonAnnotations $reload }}
   annotations:
-    {{- if ne .Values.alertmanager.config.type "none" }}
+    {{- with .Values.commonAnnotations }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+    {{- if $reload }}
     reloader.stakater.com/auto: "true"
-    {{- if eq .Values.alertmanager.config.type "configmap" }}
-    reloader.stakater.com/search: "true"
     {{- end }}
-    {{- end }}
+  {{- end }}
 spec:
+  backoffLimit: {{ .Values.alertmanager.backoffLimit }}
+  ttlSecondsAfterFinished: {{ .Values.alertmanager.ttlSecondsAfterFinished }}
   template:
     metadata:
       labels:
         {{- include "mimir-sync.selectorLabels" . | nindent 8 }}
         app.kubernetes.io/component: alertmanager-sync
     spec:
-      {{- with .Values.imagePullSecrets }}
-      imagePullSecrets:
-        {{- toYaml . | nindent 8 }}
-      {{- end }}
       serviceAccountName: {{ include "mimir-sync.serviceAccountName" . }}
       restartPolicy: OnFailure
-      containers:
-        - name: alertmanager-sync
-          securityContext:
-            {{- toYaml .Values.securityContext | nindent 12 }}
-          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
-          imagePullPolicy: {{ .Values.image.pullPolicy }}
-          {{- with .Values.alertmanager.resources }}
-          resources:
-            {{- toYaml . | nindent 12 }}
-          {{- end }}
-          command:
-            - mal-sync
-            - alertmanager
-            - --config.file=/config/{{ .Values.alertmanager.config.key }}
-            - --templates.dir={{ .Values.alertmanager.templatesPathInContainer }}
-            - --mimir.address={{ .Values.mimir.address }}
-            - --mimir.id={{ .Values.mimir.tenantId }}
-            {{- if .Values.alertmanager.syncTempDir }}
-            - --temp.dir={{ .Values.alertmanager.syncTempDir }}
-            {{- end }}
-            # MIMIR_USER and MIMIR_PASSWORD (ideally MIMIR_API_KEY) environment variables are already set for the container.
-            # mal-sync's call to mimirtool will rely on mimirtool picking up these environment variables for authentication.
-          {{- if ne .Values.alertmanager.config.type "none" }}
-          volumeMounts:
-            - name: alertmanager-config
-              mountPath: /config
-              readOnly: true
-          {{- end }}
-          {{- with .Values.alertmanager.extraVolumeMounts }}
-            {{- toYaml . | nindent 12 }}
-          {{- end }}
-          env:
-            - name: MIMIR_ADDRESS
-              value: "{{ .Values.mimir.address }}"
-            - name: MIMIR_TENANT_ID
-              value: "{{ .Values.mimir.tenantId }}"
-            {{- if .Values.mimir.user }}
-            - name: MIMIR_USER
-              value: "{{ .Values.mimir.user }}"
-            {{- end }}
-            {{- if .Values.mimir.password }}
-            - name: MIMIR_PASSWORD
-              value: "{{ .Values.mimir.password }}"
-            {{- end }}
-            {{- with .Values.alertmanager.extraEnv }}
-              {{- toYaml . | nindent 12 }}
-            {{- end }}
       {{- with .Values.alertmanager.imagePullSecrets }}
       imagePullSecrets:
         {{- toYaml . | nindent 8 }}
@@ -93,20 +49,75 @@ spec:
       topologySpreadConstraints:
         {{- toYaml . | nindent 8 }}
       {{- end }}
-      {{- if ne .Values.alertmanager.config.type "none" }}
+      containers:
+        - name: alertmanager-sync
+          {{- with .Values.securityContext }}
+          securityContext:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy | quote }}
+          {{- with .Values.alertmanager.resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          command:
+            - mal-sync
+            - alertmanager
+            - --config.file=/config/{{ .Values.alertmanager.config.key }}
+            - --templates.dir={{ .Values.alertmanager.templatesPathInContainer }}
+            - --mimir.address={{ .Values.mimir.address }}
+            - --mimir.id={{ .Values.mimir.tenantId }}
+            {{- if .Values.alertmanager.syncTempDir }}
+            - --temp.dir={{ .Values.alertmanager.syncTempDir }}
+            {{- end }}
+          env:
+            - name: MIMIR_ADDRESS
+              value: {{ .Values.mimir.address | quote }}
+            - name: MIMIR_TENANT_ID
+              value: {{ .Values.mimir.tenantId | quote }}
+            {{- if .Values.mimir.user }}
+            - name: MIMIR_USER
+              value: {{ .Values.mimir.user | quote }}
+            {{- end }}
+            {{- if .Values.mimir.existingSecret.name }}
+            - name: MIMIR_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.mimir.existingSecret.name }}
+                  key: {{ .Values.mimir.existingSecret.key }}
+            {{- else if .Values.mimir.password }}
+            - name: MIMIR_PASSWORD
+              value: {{ .Values.mimir.password | quote }}
+            {{- end }}
+            {{- with .Values.alertmanager.extraEnv }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
+          {{- if or $hasBuiltin .Values.alertmanager.extraVolumeMounts }}
+          volumeMounts:
+            {{- if $hasBuiltin }}
+            - name: alertmanager-config
+              mountPath: /config
+              readOnly: true
+            {{- end }}
+            {{- with .Values.alertmanager.extraVolumeMounts }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
+          {{- end }}
+      {{- if or $hasBuiltin .Values.alertmanager.extraVolumes }}
       volumes:
+        {{- if $hasBuiltin }}
         - name: alertmanager-config
           {{- if eq .Values.alertmanager.config.type "configmap" }}
           configMap:
-            name: {{ if .Values.alertmanager.config.existingName }}{{ .Values.alertmanager.config.existingName }}{{ else }}{{ include "mimir-sync.fullname" . }}-alertmanager{{ end }}
+            name: {{ include "mimir-sync.alertmanagerConfigName" . }}
           {{- else if eq .Values.alertmanager.config.type "secret" }}
           secret:
-            secretName: {{ if .Values.alertmanager.config.existingName }}{{ .Values.alertmanager.config.existingName }}{{ else }}{{ include "mimir-sync.fullname" . }}-alertmanager-config{{ end }}
+            secretName: {{ include "mimir-sync.alertmanagerConfigName" . }}
           {{- end }}
-      {{- end }}
-      {{- with .Values.alertmanager.extraVolumes }}
+        {{- end }}
+        {{- with .Values.alertmanager.extraVolumes }}
         {{- toYaml . | nindent 8 }}
+        {{- end }}
       {{- end }}
-  backoffLimit: 2
-  ttlSecondsAfterFinished: 3600  # Clean up completed jobs after 1 hour
 {{- end }}

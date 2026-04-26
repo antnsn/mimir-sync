@@ -129,8 +129,8 @@ mimir:
   # password: ""
 
 image:
-  repository: grafana/mimirtool
-  tag: latest
+  repository: ghcr.io/antnsn/mal-sync
+  tag: ""  # Falls back to .Chart.AppVersion when empty
   pullPolicy: IfNotPresent
 
 alertmanager:
@@ -152,7 +152,7 @@ rules:
 
 1. The chart creates Kubernetes Jobs that run to sync configurations to Mimir
 2. Jobs are triggered when ConfigMaps/Secrets change (requires Reloader)
-3. Jobs use `grafana/mimirtool` to sync configurations
+3. Jobs use `mal-sync` (a wrapper around `mimirtool`/`lokitool`) to sync configurations
 4. Completed jobs are automatically cleaned up
 
 ## License

@@ -1,82 +1,34 @@
-{{- if .Values.rules.enabled }}
+{{- if .Values.rules.enabled -}}
+{{- $hasBuiltin := ne .Values.rules.config.type "none" -}}
+{{- $reload := or $hasBuiltin .Values.rules.config.existingName -}}
 apiVersion: batch/v1
 kind: Job
 metadata:
   name: {{ include "mimir-sync.fullname" . }}-rules-sync
+  namespace: {{ .Release.Namespace }}
   labels:
     {{- include "mimir-sync.labels" . | nindent 4 }}
     app.kubernetes.io/component: rules-sync
+  {{- if or .Values.commonAnnotations $reload }}
   annotations:
-    {{- if ne .Values.rules.config.type "none" }}
+    {{- with .Values.commonAnnotations }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+    {{- if $reload }}
     reloader.stakater.com/auto: "true"
-    {{- if eq .Values.rules.config.type "configmap" }}
-    reloader.stakater.com/search: "true"
     {{- end }}
-    {{- end }}
+  {{- end }}
 spec:
+  backoffLimit: {{ .Values.rules.backoffLimit }}
+  ttlSecondsAfterFinished: {{ .Values.rules.ttlSecondsAfterFinished }}
   template:
     metadata:
       labels:
         {{- include "mimir-sync.selectorLabels" . | nindent 8 }}
         app.kubernetes.io/component: rules-sync
     spec:
-      {{- with .Values.imagePullSecrets }}
-      imagePullSecrets:
-        {{- toYaml . | nindent 8 }}
-      {{- end }}
       serviceAccountName: {{ include "mimir-sync.serviceAccountName" . }}
       restartPolicy: OnFailure
-      containers:
-        - name: rules-sync
-          securityContext:
-            {{- toYaml .Values.securityContext | nindent 12 }}
-          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
-          imagePullPolicy: {{ .Values.image.pullPolicy }}
-          {{- with .Values.rules.resources }}
-          resources:
-            {{- toYaml . | nindent 12 }}
-          {{- end }}
-          command:
-            - mal-sync
-            - mimir-rules
-            # The rules are mounted from a ConfigMap/Secret to /rules/
-            # mal-sync will process all .yaml and .yml files in this directory.
-            - --rules.path=/rules/
-            - --mimir.address={{ .Values.mimir.address }}
-            - --mimir.id={{ .Values.mimir.tenantId }}
-            # Ensure 'rules.namespace' is defined in your values.yaml or provide a default.
-            # Example: - --rules.namespace={{ .Values.rules.namespace | default "default-namespace" }}
-            - --rules.namespace={{ .Values.namespaces.mimir }}
-            {{- if .Values.rules.syncTempDir }}
-            - --temp.dir={{ .Values.rules.syncTempDir }}
-            {{- end }}
-            # MIMIR_USER and MIMIR_PASSWORD (ideally MIMIR_API_KEY) environment variables are already set for the container.
-            # mal-sync's call to mimirtool will rely on mimirtool picking up these environment variables for authentication.
-          {{- if ne .Values.rules.config.type "none" }}
-          volumeMounts:
-            - name: rules-config
-              mountPath: /rules
-              readOnly: true
-          {{- end }}
-          {{- with .Values.rules.extraVolumeMounts }}
-            {{- toYaml . | nindent 12 }}
-          {{- end }}
-          env:
-            - name: MIMIR_ADDRESS
-              value: "{{ .Values.mimir.address }}"
-            - name: MIMIR_TENANT_ID
-              value: "{{ .Values.mimir.tenantId }}"
-            {{- if .Values.mimir.user }}
-            - name: MIMIR_USER
-              value: "{{ .Values.mimir.user }}"
-            {{- end }}
-            {{- if .Values.mimir.password }}
-            - name: MIMIR_PASSWORD
-              value: "{{ .Values.mimir.password }}"
-            {{- end }}
-            {{- with .Values.rules.extraEnv }}
-              {{- toYaml . | nindent 12 }}
-            {{- end }}
       {{- with .Values.rules.imagePullSecrets }}
       imagePullSecrets:
         {{- toYaml . | nindent 8 }}
@@ -97,20 +49,75 @@ spec:
       topologySpreadConstraints:
         {{- toYaml . | nindent 8 }}
       {{- end }}
-      {{- if ne .Values.rules.config.type "none" }}
+      containers:
+        - name: rules-sync
+          {{- with .Values.securityContext }}
+          securityContext:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy | quote }}
+          {{- with .Values.rules.resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          command:
+            - mal-sync
+            - mimir-rules
+            - --rules.path={{ .Values.rules.rulesPath }}/
+            - --mimir.address={{ .Values.mimir.address }}
+            - --mimir.id={{ .Values.mimir.tenantId }}
+            - --rules.namespace={{ .Values.namespaces.mimir }}
+            {{- if .Values.rules.syncTempDir }}
+            - --temp.dir={{ .Values.rules.syncTempDir }}
+            {{- end }}
+          env:
+            - name: MIMIR_ADDRESS
+              value: {{ .Values.mimir.address | quote }}
+            - name: MIMIR_TENANT_ID
+              value: {{ .Values.mimir.tenantId | quote }}
+            {{- if .Values.mimir.user }}
+            - name: MIMIR_USER
+              value: {{ .Values.mimir.user | quote }}
+            {{- end }}
+            {{- if .Values.mimir.existingSecret.name }}
+            - name: MIMIR_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.mimir.existingSecret.name }}
+                  key: {{ .Values.mimir.existingSecret.key }}
+            {{- else if .Values.mimir.password }}
+            - name: MIMIR_PASSWORD
+              value: {{ .Values.mimir.password | quote }}
+            {{- end }}
+            {{- with .Values.rules.extraEnv }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
+          {{- if or $hasBuiltin .Values.rules.extraVolumeMounts }}
+          volumeMounts:
+            {{- if $hasBuiltin }}
+            - name: rules-config
+              mountPath: {{ .Values.rules.rulesPath }}
+              readOnly: true
+            {{- end }}
+            {{- with .Values.rules.extraVolumeMounts }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
+          {{- end }}
+      {{- if or $hasBuiltin .Values.rules.extraVolumes }}
       volumes:
+        {{- if $hasBuiltin }}
         - name: rules-config
           {{- if eq .Values.rules.config.type "configmap" }}
           configMap:
-            name: {{ if .Values.rules.config.existingName }}{{ .Values.rules.config.existingName }}{{ else }}{{ include "mimir-sync.fullname" . }}-rules{{ end }}
+            name: {{ include "mimir-sync.rulesConfigName" . }}
           {{- else if eq .Values.rules.config.type "secret" }}
           secret:
-            secretName: {{ if .Values.rules.config.existingName }}{{ .Values.rules.config.existingName }}{{ else }}{{ include "mimir-sync.fullname" . }}-rules-config{{ end }}
+            secretName: {{ include "mimir-sync.rulesConfigName" . }}
           {{- end }}
-      {{- end }}
-      {{- with .Values.rules.extraVolumes }}
+        {{- end }}
+        {{- with .Values.rules.extraVolumes }}
         {{- toYaml . | nindent 8 }}
+        {{- end }}
       {{- end }}
-  backoffLimit: 2
-  ttlSecondsAfterFinished: 3600  # Clean up completed jobs after 1 hour
 {{- end }}

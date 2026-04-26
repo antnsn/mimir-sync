@@ -1,472 +1,244 @@
-# Default values for mimir-sync
+# Default values for mimir-sync.
 # This is a YAML-formatted file.
-# Declare variables to be passed into your templates.
-# This file contains all the configurable parameters for the Mimir Sync chart.
-# For more details, see: https://github.com/antnsn/mimir-sync
+# For the full reference, see: https://github.com/antnsn/mimir-sync
 
-# Image configuration
+# -- Override the chart name (defaults to .Chart.Name).
+nameOverride: ""
+# -- Override the fully qualified app name.
+fullnameOverride: ""
+
+# -- Common labels applied to every resource rendered by this chart.
+commonLabels: {}
+# -- Common annotations applied to every resource rendered by this chart.
+# Note: Reloader annotations on Jobs are merged with these.
+commonAnnotations: {}
+
+# Image used by every sync Job.
 image:
+  # -- Image repository for the mal-sync wrapper around mimirtool/lokitool.
   repository: ghcr.io/antnsn/mal-sync
-  tag: latest
+  # -- Image tag. When empty, the chart falls back to .Chart.AppVersion so the
+  # image stays pinned to a chart release. Set explicitly to override.
+  tag: ""
+  # -- Image pull policy.
   pullPolicy: IfNotPresent
 
-# Global configuration
-global:
-  # A default name to use for the application
-  nameOverride: ""
-  # A default fullname to use for the application
-  fullnameOverride: ""
-  # Common labels to add to all resources
-  commonLabels: {}
-  # Common annotations to add to all resources
-  commonAnnotations: {}
-  # Create the Kubernetes namespace if it doesn't exist
-  createNamespace: true
-  # The namespace to install the release into
-  namespace: "mimir-sync"
+# -- Pod-level securityContext applied to all Job pods (toYaml'd as-is).
+securityContext: {}
 
-# RBAC configuration
+# RBAC configuration. The Jobs themselves do NOT call the Kubernetes API; this
+# is opt-in for setups that wire Reloader (or similar) to use this SA to watch
+# the chart's ConfigMaps/Secrets within the release namespace.
 rbac:
-  # Specifies whether RBAC resources should be created
+  # -- Create namespace-scoped Role and RoleBinding granting read access to the
+  # ConfigMaps/Secrets this chart manages. Most users can leave this enabled.
   create: true
 
-# Loki configuration (for loki-rules sync)
-loki:
-  # Loki API endpoint (e.g., http://loki-gateway.loki.svc.cluster.local/loki/api/v1)
-  address: "http://loki-distributed-gateway.loki.svc.cluster.local"
-  # Loki tenant ID
-  tenantId: "anonymous"
-  # Loki API authentication (optional)
-  # user: ""
-  # password: "" # Or use LOKI_API_KEY via extraEnv in lokiRules section
-
-# Loki Rules sync configuration
-lokiRules:
-  # Enable or disable Loki Rules sync job
-  enabled: false # Disabled by default
-
-  # Image pull secrets for the loki-rules sync job
-  imagePullSecrets: []
-
-  # Node selector for the loki-rules sync job
-  nodeSelector: {}
-
-  # Affinity rules for the loki-rules sync job
-  affinity: {}
-
-  # Tolerations for the loki-rules sync job
-  tolerations: []
-
-  # Topology spread constraints for the loki-rules sync job
-  topologySpreadConstraints: []
-
-  # Configuration for Loki Rules files (ConfigMap or Secret)
-  config:
-    # Type of resource to use for Loki Rules (configmap, secret, or none)
-    type: "none" # Set to 'configmap' or 'secret' to enable
-    # Name of an existing ConfigMap/Secret to use (leave empty to create a new one)
-    existingName: ""
-    # Key in the ConfigMap/Secret that contains the Loki Rules (if type is 'secret' and it's a single file, otherwise ignored for directory mount)
-    # key: "loki-rules.yaml" # Not directly used if mounting a directory of rules
-
-  # Path where Loki rule files are mounted inside the container (used for mal-sync --rules.path)
-  rulesPathInContainer: "/loki-rules"
-
-  # Optional: Temporary directory for mal-sync to stage files (used for mal-sync --temp.dir)
-  # syncTempDir: "/tmp/mal-sync-lokirules"
-
-  # Loki rules definitions to be used when config.type is 'configmap' or 'secret' and no existingName is provided
-  # Each key will be a separate file in the ConfigMap/Secret
-  rules:
-    {}
-    # example-rules.yaml: |
-    #   groups:
-    #   - name: example
-    #     rules:
-    #     - alert: HighLogRate
-    #       expr: sum(rate({app="foo"}[5m])) > 100
-    #       for: 10m
-    #       labels:
-    #         severity: warning
-    #       annotations:
-    #         summary: High log rate for app foo
-    #         description: Log rate for app foo is above 100 logs per second for the last 10 minutes
-
-  # Resource requests and limits for the loki-rules sync job
-  resources:
-    {}
-    # limits:
-    #   cpu: 100m
-    #   memory: 128Mi
-    # requests:
-    #   cpu: 50m
-    #   memory: 64Mi
-
-  # Extra environment variables for the loki-rules sync job
-  extraEnv:
-    []
-    # Example mal-sync loki-rules environment variables (flags take precedence if set in the job command):
-    # - name: MALSYNC_LOKIRULES_RULES_PATH
-    #   value: "/custom-loki-rules-dir/"
-    # - name: MALSYNC_LOKIRULES_RULES_NAMESPACE
-    #   value: "custom-loki-rules-namespace"
-    # - name: MALSYNC_LOKIRULES_TEMP_DIR
-    #   value: "/tmp/mal-sync-lokirules-custom"
-    # - name: MALSYNC_LOKIRULES_LOKI_ADDRESS
-    #   value: "http://loki-gateway.loki.svc:3100"
-    # - name: MALSYNC_LOKIRULES_LOKI_ID
-    #   value: "your-loki-tenant-id"
-    #
-    # Example lokitool environment variables (these are also set based on the 'loki:' section above):
-    # - name: LOKI_ADDRESS
-    #   value: "http://loki-gateway.loki.svc:3100" # Overrides loki.address
-    # - name: LOKI_TENANT_ID
-    #   value: "your-loki-tenant-id" # Overrides loki.tenantId
-    # - name: LOKI_API_KEY
-    #   value: "your-loki-api-key"
-    # - name: LOKI_USERNAME
-    #   value: "your-loki-user" # Overrides loki.user
-    # - name: LOKI_PASSWORD
-    #   value: "your-loki-password" # Overrides loki.password
-    # - name: LOKITOOL_LOG_LEVEL
-    #   value: "debug" # For lokitool's own logging
-
-  # Extra volumes to mount in the loki-rules sync job
-  extraVolumes:
-    []
-    # Example for Loki rule files (if using a ConfigMap named 'loki-rules-files'):
-    # - name: loki-rules-files-volume
-    #   configMap:
-    #     name: loki-rules-files
-
-  # Extra volume mounts for the loki-rules sync job
-  extraVolumeMounts:
-    []
-    # Example for Loki rule files (if extraVolumes defines 'loki-rules-files-volume'):
-    # - name: loki-rules-files-volume
-    #   mountPath: /loki-rules # Must match lokiRules.rulesPathInContainer
-    #   readOnly: true
-
-  # Job backoff limit
-  backoffLimit: 2
-
-  # TTL seconds after finished for the job
-  ttlSecondsAfterFinished: 3600
-
-# Service account configuration
+# ServiceAccount used by every sync Job.
 serviceAccount:
-  # Specifies whether a service account should be created
+  # -- Create a dedicated ServiceAccount.
   create: true
-  # Annotations to add to the service account
+  # -- Annotations to add to the ServiceAccount.
   annotations: {}
-  # The name of the service account to use.
-  # If not set and create is true, a name is generated using the fullname template
+  # -- Name of the ServiceAccount. If empty and create=true, a name is derived
+  # from the fullname template.
   name: ""
 
-# Global namespaces configuration for all services
-namespaces:
-  # The namespace to load Mimir rules into (used for mal-sync mimir-rules --rules.namespace / MALSYNC_MIMIRRULES_RULES_NAMESPACE)
-  mimir: "default"
-  # The namespace to load Loki rules into (used for mal-sync loki-rules --rules.namespace / MALSYNC_LOKIRULES_RULES_NAMESPACE)
-  loki: "default"
-
-# Mimir configuration
+# Mimir API connection settings shared by alertmanager and rules sync Jobs.
 mimir:
-  # Mimir API endpoint (used for mal-sync --mimir.address / MALSYNC_MIMIRRULES_MIMIR_ADDRESS / MALSYNC_ALERTMANAGER_MIMIR_ADDRESS)
+  # -- Mimir API endpoint.
   address: http://mimir-distributed-nginx.mimir.svc.cluster.local:80
-  # Mimir tenant ID (used for mal-sync --mimir.id / MALSYNC_MIMIRRULES_MIMIR_ID / MALSYNC_ALERTMANAGER_MIMIR_ID)
+  # -- Mimir tenant ID (X-Scope-OrgID).
   tenantId: anonymous
+  # -- Optional Mimir basic-auth username.
+  user: ""
+  # -- Optional Mimir basic-auth password. Prefer existingSecret in production.
+  password: ""
+  # Reference an existing Secret for the Mimir password.
+  existingSecret:
+    # -- Name of an existing Secret containing the Mimir password.
+    name: ""
+    # -- Key inside the Secret that holds the password.
+    key: ""
 
-  # Mimir API authentication (optional)
-  # user: ""
-  # password: ""  # Can also be set via MIMIR_API_KEY environment variable
+# Loki API connection settings used by the loki-rules sync Job.
+loki:
+  # -- Loki API endpoint.
+  address: http://loki-distributed-gateway.loki.svc.cluster.local
+  # -- Loki tenant ID (X-Scope-OrgID).
+  tenantId: anonymous
+  # -- Optional Loki basic-auth username.
+  user: ""
+  # -- Optional Loki basic-auth password. Prefer existingSecret in production.
+  password: ""
+  # Reference an existing Secret for the Loki password.
+  existingSecret:
+    # -- Name of an existing Secret containing the Loki password.
+    name: ""
+    # -- Key inside the Secret that holds the password.
+    key: ""
 
-# Alertmanager sync configuration
+# Namespaces in which rules are loaded into Mimir/Loki (not Kubernetes namespaces).
+namespaces:
+  # -- Mimir rules namespace (--rules.namespace for mimir-rules).
+  mimir: default
+  # -- Loki rules namespace (--rules.namespace for loki-rules).
+  loki: default
+
+# Alertmanager sync configuration.
 alertmanager:
-  # Enable or disable Alertmanager sync
+  # -- Enable the Alertmanager sync Job.
   enabled: true
 
-  # Image pull secrets for the alertmanager sync job
+  # -- Image pull secrets for the alertmanager sync Job.
   imagePullSecrets: []
-
-  # Node selector for the alertmanager sync job
+  # -- Node selector for the alertmanager sync Job.
   nodeSelector: {}
-
-  # Affinity rules for the alertmanager sync job
+  # -- Affinity rules for the alertmanager sync Job.
   affinity: {}
-
-  # Tolerations for the alertmanager sync job
+  # -- Tolerations for the alertmanager sync Job.
   tolerations: []
-
-  # Resource requests and limits
+  # -- Topology spread constraints for the alertmanager sync Job.
   topologySpreadConstraints: []
+  # -- Resource requests and limits for the alertmanager sync Job.
+  resources: {}
 
-  # Configuration for Alertmanager config
+  # Source for the Alertmanager configuration.
   config:
-    # Type of resource to use for Alertmanager config (configmap, secret, or none)
+    # -- One of: configmap, secret, none. "none" disables the built-in mount
+    # (use extraVolumes/extraVolumeMounts to provide your own).
     type: secret
-    # Name of an existing ConfigMap/Secret to use (leave empty to create a new one)
+    # -- Use an existing ConfigMap/Secret instead of letting the chart create one.
     existingName: ""
-    # Key in the ConfigMap/Secret that contains the Alertmanager config
+    # -- Key inside the ConfigMap/Secret that holds the Alertmanager config.
     key: config.yml
 
-  # Path to the Alertmanager configuration file in the container (used for mal-sync --config.file / MALSYNC_ALERTMANAGER_CONFIG_FILE)
-  # This path is constructed in the job as /config/{{ .Values.alertmanager.config.key }}
-  configPath: "/config/config.yml" # Informational, actual path used in job is based on config.key
+  # -- Alertmanager configuration content (YAML string). Used only when
+  # config.type is "configmap" or "secret" and config.existingName is empty.
+  configContent: ""
 
-  # Path to the directory containing Alertmanager template files in the container (used for mal-sync --templates.dir / MALSYNC_ALERTMANAGER_TEMPLATES_DIR)
-  # Mount your templates to this path using extraVolumeMounts if needed.
-  templatesPathInContainer: "/etc/alertmanager/templates"
+  # -- Path inside the container where Alertmanager templates are mounted.
+  templatesPathInContainer: /etc/alertmanager/templates
+  # -- Optional temp dir used by mal-sync.
+  syncTempDir: ""
 
-  # Optional: Temporary directory for mal-sync to stage files (used for mal-sync --temp.dir / MALSYNC_ALERTMANAGER_TEMP_DIR)
-  # syncTempDir: "/tmp/mal-sync-alertmanager"
+  # -- Extra environment variables for the alertmanager sync Job.
+  extraEnv: []
+  # -- Extra volumes for the alertmanager sync Job.
+  extraVolumes: []
+  # -- Extra volume mounts for the alertmanager sync Job.
+  extraVolumeMounts: []
 
-  # Resource requests and limits
-  resources:
-    {}
-    # limits:
-    #   cpu: 100m
-    #   memory: 128Mi
-    # requests:
-    #   cpu: 50m
-    #   memory: 64Mi
+  # -- Job .spec.backoffLimit.
+  backoffLimit: 2
+  # -- Job .spec.ttlSecondsAfterFinished (auto-GC of completed jobs).
+  ttlSecondsAfterFinished: 3600
 
-  # Extra environment variables for the alertmanager sync job
-  extraEnv:
-    []
-    # Example mal-sync alertmanager environment variables (flags take precedence if set in the job command):
-    # - name: MALSYNC_ALERTMANAGER_CONFIG_FILE
-    #   value: "/config/custom-alertmanager.yaml"
-    # - name: MALSYNC_ALERTMANAGER_TEMPLATES_DIR
-    #   value: "/custom-templates/alertmanager"
-    # - name: MALSYNC_ALERTMANAGER_TEMP_DIR
-    #   value: "/tmp/mal-sync-alertmanager-custom"
-    # - name: MALSYNC_ALERTMANAGER_MIMIR_ADDRESS
-    #   value: "http://mimir-nginx.mimir.svc:80"
-    # - name: MALSYNC_ALERTMANAGER_MIMIR_ID
-    #   value: "your-tenant-id"
-    #
-    # Example mimirtool environment variables (these are also set based on the 'mimir:' section above):
-    # - name: MIMIR_ADDRESS
-    #   value: "http://mimir-nginx.mimir.svc:80" # Overrides mimir.address
-    # - name: MIMIR_TENANT_ID
-    #   value: "your-tenant-id" # Overrides mimir.tenantId
-    # - name: MIMIR_API_KEY
-    #   value: "your-mimir-api-key"
-    # - name: MIMIR_USER
-    #   value: "your-mimir-user" # Overrides mimir.user
-    # - name: MIMIR_PASSWORD
-    #   value: "your-mimir-password" # Overrides mimir.password
-    # - name: MIMIRTOOL_LOG_LEVEL
-    #   value: "debug" # For mimirtool's own logging
-    #
-    # Other general environment variables:
-    # - name: DEBUG
-    #   value: "true" # If mal-sync supports a general debug flag via env
-    # - name: CUSTOM_VAR
-    #   value: "custom_value"
-
-  # Extra volumes to mount in the alertmanager sync job
-  # Templates can be mounted at /etc/alertmanager/templates to be automatically
-  # detected and used with the 'mimirtool alertmanager load' command
-  extraVolumes:
-    []
-    # Example for alertmanager templates:
-    # - name: templates-volume
-    #   emptyDir: {}
-    # - name: templates-configmap
-    #   configMap:
-    #     name: alertmanager-templates
-
-  # Extra volume mounts for the alertmanager sync job
-  # Mount templates to /etc/alertmanager/templates to be automatically used
-  extraVolumeMounts:
-    []
-    # Example for alertmanager templates:
-    # - name: templates-volume
-    #   mountPath: /etc/alertmanager/templates
-    #   readOnly: true
-    # - name: templates-configmap
-    #   mountPath: /etc/alertmanager/templates
-    #   readOnly: true
-
-# Rules sync configuration
+# Mimir rules sync configuration.
 rules:
-  # Enable or disable Rules sync
+  # -- Enable the Mimir rules sync Job.
   enabled: true
 
-  # Image pull secrets for the alertmanager sync job
+  # -- Image pull secrets for the rules sync Job.
   imagePullSecrets: []
-
-  # Node selector for the alertmanager sync job
+  # -- Node selector for the rules sync Job.
   nodeSelector: {}
-
-  # Affinity rules for the alertmanager sync job
+  # -- Affinity rules for the rules sync Job.
   affinity: {}
-
-  # Tolerations for the alertmanager sync job
+  # -- Tolerations for the rules sync Job.
   tolerations: []
-
-  # Resource requests and limits
+  # -- Topology spread constraints for the rules sync Job.
   topologySpreadConstraints: []
+  # -- Resource requests and limits for the rules sync Job.
+  resources: {}
 
-  # Configuration for Rules config
+  # Source for the Prometheus rules.
   config:
-    # Type of resource to use for Rules config (configmap, secret, or none)
+    # -- One of: configmap, secret, none.
     type: secret
-    # Name of an existing ConfigMap/Secret to use (leave empty to create a new one)
+    # -- Use an existing ConfigMap/Secret instead of letting the chart create one.
     existingName: ""
-    # Key in the ConfigMap/Secret that contains the Rules config
+    # -- Key inside the ConfigMap/Secret that holds the rules (informational
+    # only when mounting a directory of files).
     key: rules.yml
 
-  # Mimir Ruler API URL
-  url: "http://mimir-ruler:8080"
-  # Path to the Rules configuration directory in the container (used for mal-sync --rules.path / MALSYNC_MIMIRRULES_RULES_PATH)
-  # This is the directory where rule files (e.g., from a ConfigMap/Secret) are mounted.
-  rulesPath: "/rules"
+  # -- Path inside the container where rule files are mounted (passed to
+  # mal-sync as --rules.path).
+  rulesPath: /rules
 
-  # Note: The Mimir namespace for rules is now defined in the global 'namespaces.mimir' section
+  # -- Optional temp dir used by mal-sync.
+  syncTempDir: ""
 
-  # Optional: Temporary directory for mal-sync to stage files (used for mal-sync --temp.dir / MALSYNC_MIMIRRULES_TEMP_DIR)
-  # syncTempDir: "/tmp/mal-sync-mimirrules"
+  # -- Prometheus rule files. Each map key becomes a file inside the generated
+  # ConfigMap/Secret. Used only when config.existingName is empty.
+  rules: {}
+  # rules:
+  #   node.yml: |
+  #     groups:
+  #       - name: node-exporter
+  #         rules:
+  #           - alert: NodeDown
+  #             expr: up{job=~"k8s-nodes|external-servers"} == 0
+  #             for: 2m
+  #             labels:
+  #               severity: critical
 
-  # Extra environment variables for the rules sync job
-  extraEnv:
-    []
-    # Example mal-sync mimir-rules environment variables (flags take precedence if set in the job command):
-    # - name: MALSYNC_MIMIRRULES_RULES_PATH
-    #   value: "/custom-rules-dir/"
-    # - name: MALSYNC_MIMIRRULES_RULES_NAMESPACE
-    #   value: "custom-rules-namespace"
-    # - name: MALSYNC_MIMIRRULES_TEMP_DIR
-    #   value: "/tmp/mal-sync-mimirrules-custom"
-    # - name: MALSYNC_MIMIRRULES_MIMIR_ADDRESS
-    #   value: "http://mimir-nginx.mimir.svc:80"
-    # - name: MALSYNC_MIMIRRULES_MIMIR_ID
-    #   value: "your-tenant-id"
-    #
-    # Example mimirtool environment variables (these are also set based on the 'mimir:' section above):
-    # - name: MIMIR_ADDRESS
-    #   value: "http://mimir-nginx.mimir.svc:80" # Overrides mimir.address
-    # - name: MIMIR_TENANT_ID
-    #   value: "your-tenant-id" # Overrides mimir.tenantId
-    # - name: MIMIR_API_KEY
-    #   value: "your-mimir-api-key"
-    # - name: MIMIR_USER
-    #   value: "your-mimir-user" # Overrides mimir.user
-    # - name: MIMIR_PASSWORD
-    #   value: "your-mimir-password" # Overrides mimir.password
-    # - name: MIMIRTOOL_LOG_LEVEL
-    #   value: "debug" # For mimirtool's own logging
-    #
-    # Other general environment variables:
-    # - name: DEBUG
-    #   value: "true" # If mal-sync supports a general debug flag via env
-    # - name: CUSTOM_VAR
-    #   value: "custom_value"
+  # -- Extra environment variables for the rules sync Job.
+  extraEnv: []
+  # -- Extra volumes for the rules sync Job.
+  extraVolumes: []
+  # -- Extra volume mounts for the rules sync Job.
+  extraVolumeMounts: []
 
-  # Extra volumes to mount in the alertmanager sync job
-  extraVolumes:
-    []
-    # - name: extra-config
-    #   configMap:
-    #     name: extra-alertmanager-config
+  # -- Job .spec.backoffLimit.
+  backoffLimit: 2
+  # -- Job .spec.ttlSecondsAfterFinished.
+  ttlSecondsAfterFinished: 3600
 
-  # Extra volume mounts for the alertmanager sync job
-  extraVolumeMounts:
-    []
-    # - name: extra-config
-    #   mountPath: /extra-config
-    #   readOnly: true
+# Loki rules sync configuration.
+lokiRules:
+  # -- Enable the Loki rules sync Job.
+  enabled: false
 
-  # Resource requests and limits
-  resources:
-    {}
-    # limits:
-    #   cpu: 100m
-    #   memory: 128Mi
-    # requests:
-    #   cpu: 50m
-    #   memory: 64Mi
+  # -- Image pull secrets for the loki-rules sync Job.
+  imagePullSecrets: []
+  # -- Node selector for the loki-rules sync Job.
+  nodeSelector: {}
+  # -- Affinity rules for the loki-rules sync Job.
+  affinity: {}
+  # -- Tolerations for the loki-rules sync Job.
+  tolerations: []
+  # -- Topology spread constraints for the loki-rules sync Job.
+  topologySpreadConstraints: []
+  # -- Resource requests and limits for the loki-rules sync Job.
+  resources: {}
 
-# Alertmanager configuration in YAML format
-alertmanagerConfig: ""
-# alertmanagerConfig: |
-#   global:
-#     resolve_timeout: 5m
-#   route:
-#     group_by: ['alertname']
-#     group_wait: 10s
-#     group_interval: 5m
-#     repeat_interval: 15m
-#     receiver: someReceiver
-#     routes:
-#       - match:
-#           severity: critical
-#         receiver: someReceiver
-#         group_wait: 10s
-#         group_interval: 2m
-#         repeat_interval: 5m
-#       - match:
-#           severity: warning
-#         receiver: keep
-#         group_wait: 10s
-#         group_interval: 2m
-#         repeat_interval: 5m
-#   receivers:
-#     - name: "someReceiver"
-#       webhook_configs:
-#         - url: "https://someurl"
-#           send_resolved: true
-#           http_config:
-#             basic_auth:
-#               username: someUsername
-#               password: somePassword
+  # Source for the Loki rules.
+  config:
+    # -- One of: configmap, secret, none.
+    type: none
+    # -- Use an existing ConfigMap/Secret instead of letting the chart create one.
+    existingName: ""
 
-# Prometheus rules in YAML format
-prometheusRules:
-  {}
-  # node.yml: |
-  #   groups:
-  #     - name: node-exporter
-  #       rules:
-  #         - alert: NodeDown
-  #           expr: up{job=~"k8s-nodes|external-servers"} == 0
-  #           for: 2m
-  #           labels:
-  #             severity: critical
-  #           annotations:
-  #             summary: Node down (instance {{ $labels.instance }})
-  #             description: "Node is down or not responding\n  VALUE = {{ $value }}\n  LABELS = {{ $labels }}"
-  #         - alert: HighNodeLoad
-  #           expr: node_load1 > 5
-  #           for: 5m
-  #           labels:
-  #             severity: warning
-  #           annotations:
-  #             description: '{{ $labels.instance }} has high load (current value: {{ $value }})'
-  #             summary: High load on {{ $labels.instance }}
-  #         - alert: HostOutOfMemory
-  #           expr: node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes * 100 < 10
-  #           for: 5m
-  #           labels:
-  #             severity: warning
-  #           annotations:
-  #             summary: Host out of memory (instance {{ $labels.instance }})
-  #             description: "Node memory is filling up (< 10% left)\n  VALUE = {{ $value }}\n  LABELS = {{ $labels }}"
-  #         - alert: HostHighCpuLoad
-  #           expr: 100 - (avg by(instance) (rate(node_cpu_seconds_total{mode="idle"}[5m])) * 100) > 85
-  #           for: 10m
-  #           labels:
-  #             severity: warning
-  #           annotations:
-  #             summary: Host high CPU load (instance {{ $labels.instance }})
-  #             description: '{{ $labels.instance }} has high CPU load (current value: {{ $value }})'
-  #         - alert: HostOutOfDiskSpace
-  #           expr: (node_filesystem_avail_bytes{mountpoint="/"}  / node_filesystem_size_bytes{mountpoint="/"} * 100) < 10
-  #           for: 5m
-  #           labels:
-  #             severity: warning
-  #           annotations:
-  #             summary: Host out of disk space (instance {{ $labels.instance }})
-  #             description: "Disk is almost full (< 10% left)\n  VALUE = {{ $value }}\n  LABELS = {{ $labels }}"
+  # -- Path inside the container where Loki rule files are mounted (passed to
+  # mal-sync as --rules.path).
+  rulesPathInContainer: /loki-rules
+
+  # -- Optional temp dir used by mal-sync.
+  syncTempDir: ""
+
+  # -- Loki rule files. Each map key becomes a file inside the generated
+  # ConfigMap/Secret. Used only when config.existingName is empty.
+  rules: {}
+
+  # -- Extra environment variables for the loki-rules sync Job.
+  extraEnv: []
+  # -- Extra volumes for the loki-rules sync Job.
+  extraVolumes: []
+  # -- Extra volume mounts for the loki-rules sync Job.
+  extraVolumeMounts: []
+
+  # -- Job .spec.backoffLimit.
+  backoffLimit: 2
+  # -- Job .spec.ttlSecondsAfterFinished.
+  ttlSecondsAfterFinished: 3600

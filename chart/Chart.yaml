@@ -2,8 +2,8 @@ apiVersion: v2
 name: mimir-sync
 description: A Helm chart for syncing Mimir and Loki configurations including alertmanager config and rules
 type: application
-version: 2.0.0
-appVersion: "2.0.0"
+version: 3.0.0
+appVersion: "3.0.0"
 
 # A list of keywords as strings
 keywords:
@@ -22,13 +22,13 @@ sources:
 # The URL to the project's homepage
 home: https://github.com/antnsn/mimir-sync
 
-# The URL to the project's documentation
+# Project maintainers
 maintainers:
   - name: antnsn
     url: https://github.com/antnsn
     email: me@antnsn.dev
 
-# The license for the project
+# Icon for the chart
 icon: https://raw.githubusercontent.com/antnsn/mimir-sync/main/assets/logo/logo.svg
 
 # Dependencies (if any)

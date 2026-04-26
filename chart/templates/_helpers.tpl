@@ -3,19 +3,17 @@
 Expand the name of the chart.
 */}}
 {{- define "mimir-sync.name" -}}
-{{- default .Chart.Name .Values.global.nameOverride | trunc 63 | trimSuffix "-" -}}
+{{- default .Chart.Name .Values.nameOverride | trunc 63 | trimSuffix "-" -}}
 {{- end -}}
 
 {{/*
 Create a default fully qualified app name.
-We truncate at 63 chars because some Kubernetes name fields are limited to this (by the DNS naming spec).
-If release name contains chart name it will be used as a full name.
 */}}
 {{- define "mimir-sync.fullname" -}}
-{{- if .Values.global.fullnameOverride -}}
-{{- .Values.global.fullnameOverride | trunc 63 | trimSuffix "-" -}}
+{{- if .Values.fullnameOverride -}}
+{{- .Values.fullnameOverride | trunc 63 | trimSuffix "-" -}}
 {{- else -}}
-{{- $name := default .Chart.Name .Values.global.nameOverride -}}
+{{- $name := default .Chart.Name .Values.nameOverride -}}
 {{- if contains $name .Release.Name -}}
 {{- .Release.Name | trunc 63 | trimSuffix "-" -}}
 {{- else -}}
@@ -25,14 +23,14 @@ If release name contains chart name it will be used as a full name.
 {{- end -}}
 
 {{/*
-Create chart name and version as used by the chart label.
+Chart name + version label.
 */}}
 {{- define "mimir-sync.chart" -}}
 {{- printf "%s-%s" .Chart.Name .Chart.Version | replace "+" "_" | trunc 63 | trimSuffix "-" -}}
 {{- end -}}
 
 {{/*
-Common labels
+Common labels.
 */}}
 {{- define "mimir-sync.labels" -}}
 helm.sh/chart: {{ include "mimir-sync.chart" . }}
@@ -47,7 +45,7 @@ app.kubernetes.io/managed-by: {{ .Release.Service }}
 {{- end -}}
 
 {{/*
-Selector labels
+Selector labels.
 */}}
 {{- define "mimir-sync.selectorLabels" -}}
 app.kubernetes.io/name: {{ include "mimir-sync.name" . }}
@@ -55,18 +53,18 @@ app.kubernetes.io/instance: {{ .Release.Name }}
 {{- end -}}
 
 {{/*
-Create the name of the service account to use
+ServiceAccount name.
 */}}
 {{- define "mimir-sync.serviceAccountName" -}}
 {{- if .Values.serviceAccount.create -}}
-    {{ default (include "mimir-sync.fullname" .) .Values.serviceAccount.name }}
+{{ default (include "mimir-sync.fullname" .) .Values.serviceAccount.name }}
 {{- else -}}
-    {{ default "default" .Values.serviceAccount.name }}
+{{ default "default" .Values.serviceAccount.name }}
 {{- end -}}
 {{- end -}}
 
 {{/*
-Create the name of the alertmanager config
+Resolved name of the Alertmanager config ConfigMap/Secret.
 */}}
 {{- define "mimir-sync.alertmanagerConfigName" -}}
 {{- if .Values.alertmanager.config.existingName -}}
@@ -77,12 +75,23 @@ Create the name of the alertmanager config
 {{- end -}}
 
 {{/*
-Create the name of the rules config
+Resolved name of the Mimir rules ConfigMap/Secret.
 */}}
 {{- define "mimir-sync.rulesConfigName" -}}
 {{- if .Values.rules.config.existingName -}}
 {{- .Values.rules.config.existingName -}}
 {{- else -}}
 {{- printf "%s-rules-config" (include "mimir-sync.fullname" .) | trunc 63 | trimSuffix "-" -}}
+{{- end -}}
+{{- end -}}
+
+{{/*
+Resolved name of the Loki rules ConfigMap/Secret.
+*/}}
+{{- define "mimir-sync.lokiRulesConfigName" -}}
+{{- if .Values.lokiRules.config.existingName -}}
+{{- .Values.lokiRules.config.existingName -}}
+{{- else -}}
+{{- printf "%s-loki-rules-config" (include "mimir-sync.fullname" .) | trunc 63 | trimSuffix "-" -}}
 {{- end -}}
 {{- end -}}

@@ -1,15 +1,17 @@
-{{- if and (eq .Values.alertmanager.config.type "configmap") (not .Values.alertmanager.config.existingName) -}}
+{{- if and .Values.alertmanager.enabled (eq .Values.alertmanager.config.type "configmap") (not .Values.alertmanager.config.existingName) -}}
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: {{ include "mimir-sync.fullname" . }}-alertmanager-config
-  namespace: {{ .Values.namespace }}
+  name: {{ include "mimir-sync.alertmanagerConfigName" . }}
+  namespace: {{ .Release.Namespace }}
   labels:
-    app: {{ template "mimir-sync.name" . }}
-    chart: {{ template "mimir-sync.chart" . }}
-    release: {{ .Release.Name }}
-    heritage: {{ .Release.Service }}
+    {{- include "mimir-sync.labels" . | nindent 4 }}
+    app.kubernetes.io/component: alertmanager-sync
+  {{- with .Values.commonAnnotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
 data:
   {{ .Values.alertmanager.config.key }}: |
-    {{- .Values.alertmanagerConfig | nindent 4 }}
+    {{- .Values.alertmanager.configContent | nindent 4 }}
 {{- end -}}
