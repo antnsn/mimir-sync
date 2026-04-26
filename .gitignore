@@ -19,6 +19,8 @@ Thumbs.db
 # Local development
 .helm/
 .helmignore
+.bin/
+chart/Chart.lock
 
 # Backup files
 *.bak
