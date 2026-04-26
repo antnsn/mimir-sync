@@ -10,6 +10,7 @@ jobs:
   super-linter:
     name: Lint Code Base
     runs-on: ubuntu-24.04
+    timeout-minutes: 20
     permissions:
       contents: read
     steps:
@@ -27,7 +28,7 @@ jobs:
           VALIDATE_ALL_CODEBASE: false
           VALIDATE_BASH: true
           VALIDATE_BASH_EXEC: true
-          # VALIDATE_CHECKOV: true - always scans everything and all charts have too much errors
+          # VALIDATE_CHECKOV: true - always scans everything and all charts have too many errors
           VALIDATE_EDITORCONFIG: true
           VALIDATE_ENV: true
           VALIDATE_GITHUB_ACTIONS: true
@@ -42,16 +43,21 @@ jobs:
           VALIDATE_XML: true
   lint-docs:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
       - name: Checkout
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
           fetch-depth: 0
-      - name: Install Helm Docs
-        uses: envoy/install-helm-docs@05313083ef2cfaea27c4c3d7cb725242d22ea88b # v1.0.0
-        with:
-          # renovate: github=norwoodj/helm-docs
-          version: 1.14.2
+      - name: Install helm-docs
+        run: |
+          set -euo pipefail
+          HELM_DOCS_VERSION=1.14.2
+          curl -sSL -o /tmp/helm-docs.tgz \
+            "https://github.com/norwoodj/helm-docs/releases/download/v${HELM_DOCS_VERSION}/helm-docs_${HELM_DOCS_VERSION}_Linux_x86_64.tar.gz"
+          tar -xzf /tmp/helm-docs.tgz -C /tmp helm-docs
+          sudo install -m 0755 /tmp/helm-docs /usr/local/bin/helm-docs
+          helm-docs --version
       - name: Run helm-docs
         run: |
           helm-docs

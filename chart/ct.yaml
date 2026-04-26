@@ -1,5 +1,7 @@
 remote: origin
 target-branch: main
+chart-dirs:
+  - .
 check-version-increment: true
 validate-maintainers: true
 validate-chart-schema: true

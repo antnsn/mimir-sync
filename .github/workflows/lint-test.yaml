@@ -4,10 +4,13 @@ on:
   pull_request:
     paths:
       - "chart/**"
-      - ".github/workflows/*.yaml"
+      - ".github/workflows/*.y*ml"
+  push:
+    branches: [main]
+    paths:
+      - "chart/**"
+      - ".github/workflows/*.y*ml"
 
-env:
-  CT_BUILD_ID: "${{ github.run_id }}"
 jobs:
   build:
     name: lint, install
@@ -15,23 +18,28 @@ jobs:
     timeout-minutes: 10
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
           fetch-depth: 0
 
       - name: Set up Helm
-        uses: azure/setup-helm@v4
+        uses: azure/setup-helm@b9e51907a09c216f16ebe8536097933489208112 # v4.3.0
         with:
           version: v3.17.1
 
       - name: Set up chart-testing
-        uses: helm/chart-testing-action@v2.7.0
+        uses: helm/chart-testing-action@0d28d3144d3a25ea2cc349d6e59901c4ff469b3b # v2.7.0
 
-      - name: Validate Chart Documentation
-        uses: envoy/install-helm-docs@v1.0.0
-        with:
-          version: 1.14.2
-          
+      - name: Install helm-docs
+        run: |
+          set -euo pipefail
+          HELM_DOCS_VERSION=1.14.2
+          curl -sSL -o /tmp/helm-docs.tgz \
+            "https://github.com/norwoodj/helm-docs/releases/download/v${HELM_DOCS_VERSION}/helm-docs_${HELM_DOCS_VERSION}_Linux_x86_64.tar.gz"
+          tar -xzf /tmp/helm-docs.tgz -C /tmp helm-docs
+          sudo install -m 0755 /tmp/helm-docs /usr/local/bin/helm-docs
+          helm-docs --version
+
       - name: Run helm-docs check
         working-directory: chart
         run: |
@@ -44,21 +52,27 @@ jobs:
           changed="$(ct list-changed --config chart/ct.yaml)"
           if [[ -n "$changed" ]]; then
             echo "changed=true" >> "$GITHUB_OUTPUT"
+            {
+              echo "changed_list<<EOF"
+              echo "$changed"
+              echo "EOF"
+            } >> "$GITHUB_OUTPUT"
           fi
 
       - name: Run chart-testing (lint)
-        run: ct lint  --debug --config chart/ct.yaml
+        run: ct lint --debug --config chart/ct.yaml
 
       - name: Create kind cluster
         uses: helm/kind-action@a1b0e391336a6ee6713a0583f8c6240d70863de3 # v1.12.0
         if: steps.list-changed.outputs.changed == 'true'
 
-      - name: Apply Prometheus Operator CRDs (unless for charts already installing it)
-        env:
-          CHANGED_LIST: ${{ steps.list-changed.outputs.changed_list }}
+      - name: Apply Prometheus Operator CRDs
+        if: |
+          steps.list-changed.outputs.changed == 'true' &&
+          !contains(steps.list-changed.outputs.changed_list, 'prometheus-operator-crds') &&
+          !contains(steps.list-changed.outputs.changed_list, 'kube-prometheus-stack')
         run: |
-          helm install prometheus-operator-crds oci://ghcr.io/prometheus-community/charts/prometheus-operator-crds
-        if: steps.list-changed.outputs.changed == 'true'
+          helm install prometheus-operator-crds oci://ghcr.io/prometheus-community/charts/prometheus-operator-crds --wait
 
       - name: Run chart-testing (install)
         run: ct install --debug --config chart/ct.yaml
