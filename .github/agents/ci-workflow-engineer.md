@@ -12,7 +12,7 @@ You own the GitHub Actions automation for **mimir-sync**.
 
 - `.github/workflows/lint-test.yaml` — runs `helm/chart-testing-action` (`ct lint`) on PRs and pushes. Uses `chart/ct.yaml` for config.
 - `.github/workflows/release.yaml` — triggered by `v*` tags. Packages the chart with `helm/chart-releaser-action`, publishes to `gh-pages`, and refreshes the index consumed at `https://antnsn.github.io/mimir-sync`. Config in `.github/cr.yaml`.
-- `.github/workflows/superlinter.yml` — runs Super-Linter on the repo.
+- `.github/workflows/superlinter.yaml` — runs Super-Linter on the repo.
 
 ## Conventions
 

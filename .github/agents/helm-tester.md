@@ -21,7 +21,7 @@ Run these in order; stop and report on the first failure:
      --set mimir.tenantId=tenant-1 \
      --set alertmanager.enabled=true \
      --set rules.enabled=true \
-     --set loki.rules.enabled=true > /tmp/mimir-sync-all.yaml
+     --set lokiRules.enabled=true > /tmp/mimir-sync-all.yaml
    ```
 4. Render with Secret-backed configs (`alertmanager.config.type=secret`, `rules.config.type=secret`) and with `existingName` set, to exercise both code paths.
 5. `ct lint --config chart/ct.yaml --charts chart/` if `ct` is installed (it's what CI uses via `helm/chart-testing-action`).
