@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="assets/logo/logo.svg" alt="Mimir Sync Logo" width="200">
+  <img src="assets/logo/logo.png" alt="Mimir Sync Logo" width="200">
   
   # Mimir Sync
 </div>
