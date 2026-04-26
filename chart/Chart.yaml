@@ -29,7 +29,7 @@ maintainers:
     email: me@antnsn.dev
 
 # Icon for the chart
-icon: https://raw.githubusercontent.com/antnsn/mimir-sync/main/assets/logo/logo.svg
+icon: https://raw.githubusercontent.com/antnsn/mimir-sync/main/assets/logo/logo.png
 
 # Dependencies (if any)
 dependencies: []
