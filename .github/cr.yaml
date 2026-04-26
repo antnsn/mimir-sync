@@ -7,8 +7,10 @@ git-repo-url: https://github.com/antnsn/mimir-sync
 # The GitHub Pages URL for the charts (gh-pages branch root)
 github-pages-url: https://antnsn.github.io/mimir-sync
 
-# The path to the directory containing Helm charts
-charts-dir: chart
+# The path to the directory containing Helm charts. The chart-releaser action
+# input `charts_dir` overrides this anyway (we set it to "." in release.yaml),
+# but keep this in sync for any local `cr` invocations.
+charts-dir: .
 
 # The branch used for GitHub Pages
 github-pages-branch: gh-pages

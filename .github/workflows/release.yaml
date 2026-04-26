@@ -38,6 +38,11 @@ jobs:
       - name: Run chart-releaser
         uses: helm/chart-releaser-action@a0d2dc62c5e491af8ef6ba64a2e02bcf3fb33aa1 # v1.7.0
         with:
+          # Our single chart lives at chart/Chart.yaml. chart-releaser scans
+          # `charts_dir/*/Chart.yaml`, so we point it at the repo root and
+          # rely on the per-chart Chart.yaml discovery. The default of
+          # "charts" silently finds nothing in this repo.
+          charts_dir: .
           config: .github/cr.yaml
         env:
           CR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
