@@ -1,216 +1,315 @@
-#!/bin/bash
-set -e
+#!/usr/bin/env bash
+# Release helper for the mimir-sync Helm chart.
+#
+# Single release path: this script bumps chart/Chart.yaml, validates,
+# regenerates docs, commits, and pushes to main. It does NOT create or push
+# tags, and it does NOT touch gh-pages. The chart-releaser-action workflow
+# (.github/workflows/release.yaml) is the sole publisher: it tags, packages,
+# pushes to gh-pages, and creates the GitHub Release.
 
-# Default values
+set -euo pipefail
+
+# ---------------------------------------------------------------------------
+# Constants
+# ---------------------------------------------------------------------------
+HELM_DOCS_VERSION="v1.14.2"
+CHART_DIR="chart"
+CHART_FILE="${CHART_DIR}/Chart.yaml"
+CHART_README="${CHART_DIR}/README.md"
+
+# Colors
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+RED='\033[0;31m'
+NC='\033[0m'
+
+# State for cleanup
+ORIGINAL_BRANCH=""
+
+# ---------------------------------------------------------------------------
+# Argument parsing
+# ---------------------------------------------------------------------------
 DRY_RUN=false
-
-# Parse command line arguments
 for arg in "$@"; do
-  case $arg in
+  case "$arg" in
     --dry-run)
       DRY_RUN=true
-      shift
+      ;;
+    -h|--help)
+      cat <<'EOF'
+Usage: scripts/release.sh [--dry-run]
+
+Bumps chart/Chart.yaml, validates the chart, regenerates chart/README.md,
+commits, and pushes to main. The chart-releaser-action workflow handles
+tagging, packaging, gh-pages publication, and the GitHub Release.
+
+Options:
+  --dry-run   Run all checks and show the diff in an isolated worktree, but
+              do not modify the working tree or push anything.
+EOF
+      exit 0
       ;;
     *)
-      echo "Unknown argument: $arg"
+      echo "Unknown argument: $arg" >&2
       exit 1
       ;;
   esac
 done
 
-# Colors for output
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-RED='\033[0;31m'
-NC='\033[0m' # No Color
+# ---------------------------------------------------------------------------
+# Trap
+# ---------------------------------------------------------------------------
+on_error() {
+  local rc=$?
+  echo -e "${RED}release.sh failed with exit ${rc}${NC}" >&2
+  if [[ -n "${ORIGINAL_BRANCH}" ]]; then
+    git checkout "${ORIGINAL_BRANCH}" >/dev/null 2>&1 || true
+  fi
+  cleanup_worktree || true
+  exit "$rc"
+}
+trap on_error ERR
 
-# Function to check if command exists
+# ---------------------------------------------------------------------------
+# Helpers
+# ---------------------------------------------------------------------------
 command_exists() {
-    command -v "$1" >/dev/null 2>&1
+  command -v "$1" >/dev/null 2>&1
 }
 
-# Function to install helm-docs if not present
-install_helm_docs() {
-    if ! command_exists helm-docs; then
-        echo -e "${YELLOW}helm-docs not found. Installing...${NC}"
-        if command_exists go; then
-            GO111MODULE=on go install github.com/norwoodj/helm-docs/cmd/helm-docs@latest
-            export PATH="$(go env GOPATH)/bin:$PATH"
-        else
-            echo -e "${RED}Error: Go is required to install helm-docs. Please install Go and try again.${NC}"
-            exit 1
-        fi
-    fi
+# Cross-platform sed -i wrapper
+sed_inplace() {
+  if sed --version >/dev/null 2>&1; then
+    sed -i "$@"
+  else
+    sed -i '' "$@"
+  fi
 }
 
-# Function to run helm lint
-run_helm_lint() {
-    echo -e "${YELLOW}Running Helm lint...${NC}"
-    if ! command_exists helm; then
-        echo -e "${RED}Error: Helm is not installed. Please install Helm and try again.${NC}"
-        exit 1
-    fi
-    
-    if ! helm lint chart/; then
-        echo -e "${RED}Error: Helm lint failed. Please fix the issues and try again.${NC}"
-        exit 1
-    fi
-    echo -e "${GREEN}✓ Helm lint passed${NC}"
-}
-
-# Function to package the helm chart and update the gh-pages branch
-update_gh_pages() {
-    echo -e "${YELLOW}Packaging Helm chart and updating GitHub Pages...${NC}"
-    
-    # Create a temporary directory
-    local temp_dir=$(mktemp -d)
-    echo -e "${YELLOW}Using temporary directory: ${temp_dir}${NC}"
-    
-    # Package the chart
-    echo -e "${YELLOW}Packaging chart...${NC}"
-    helm package chart/ -d "${temp_dir}/charts"
-    
-    # Save current branch
-    local current_branch=$(git rev-parse --abbrev-ref HEAD)
-    
-    # Switch to gh-pages branch
-    echo -e "${YELLOW}Switching to gh-pages branch...${NC}"
-    git fetch origin gh-pages
-    git checkout gh-pages
-    
-    # Copy the packaged chart
-    mkdir -p charts
-    cp "${temp_dir}/charts/mimir-sync-${NEW_VERSION}.tgz" charts/
-    
-    # Update or create the index.yaml
-    echo -e "${YELLOW}Updating Helm repository index...${NC}"
-    if [ -f index.yaml ]; then
-        helm repo index --url https://antnsn.github.io/mimir-sync --merge index.yaml .
-    else
-        helm repo index --url https://antnsn.github.io/mimir-sync .
-    fi
-    
-    # Commit and push changes to gh-pages
-    echo -e "${YELLOW}Committing and pushing changes to gh-pages branch...${NC}"
-    git add charts/ index.yaml
-    git commit -m "chore: release chart v${NEW_VERSION}"
-    git push origin gh-pages
-    
-    # Switch back to original branch
-    echo -e "${YELLOW}Switching back to ${current_branch} branch...${NC}"
-    git checkout "${current_branch}"
-    
-    # Clean up
-    rm -rf "${temp_dir}"
-    
-    echo -e "${GREEN}✓ GitHub Pages updated with new chart version${NC}"
-}
-
-# Function to update documentation
-update_docs() {
-    echo -e "${YELLOW}Updating documentation...${NC}"
-    install_helm_docs
-    helm-docs
-    
-    # Check if documentation was updated
-    if ! git diff --quiet chart/README.md; then
-        echo -e "${YELLOW}Documentation was updated.${NC}"
-        git add chart/README.md
-    else
-        echo -e "${GREEN}No documentation changes detected.${NC}"
-    fi
-}
-
-# Get current version from Chart.yaml
-CURRENT_VERSION=$(grep '^version:' chart/Chart.yaml | awk '{print $2}')
-echo -e "${YELLOW}Current version: ${CURRENT_VERSION}${NC}"
-
-# Prompt for new version
-read -p "Enter new version (current: ${CURRENT_VERSION}): " NEW_VERSION
-
-# Validate version format (semver)
-if ! [[ "$NEW_VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z-]+(\.[0-9A-Za-z-]+)*(\+[0-9A-Za-z-]+)?)?$ ]]; then
-    echo "Error: Invalid version format. Please use semantic versioning (e.g., 1.2.3)"
+ensure_helm_docs() {
+  if command_exists helm-docs; then
+    return
+  fi
+  echo -e "${YELLOW}helm-docs not found. Installing ${HELM_DOCS_VERSION}...${NC}"
+  if ! command_exists go; then
+    echo -e "${RED}Error: Go is required to install helm-docs.${NC}" >&2
     exit 1
+  fi
+  GO111MODULE=on go install "github.com/norwoodj/helm-docs/cmd/helm-docs@${HELM_DOCS_VERSION}"
+  GOPATH_BIN="$(go env GOPATH)/bin"
+  export PATH="${GOPATH_BIN}:${PATH}"
+}
+
+DRYRUN_WORKTREE=""
+cleanup_worktree() {
+  if [[ -n "${DRYRUN_WORKTREE}" && -d "${DRYRUN_WORKTREE}" ]]; then
+    git worktree remove --force "${DRYRUN_WORKTREE}" >/dev/null 2>&1 || rm -rf "${DRYRUN_WORKTREE}"
+    DRYRUN_WORKTREE=""
+  fi
+}
+
+# ---------------------------------------------------------------------------
+# Preconditions
+# ---------------------------------------------------------------------------
+echo -e "${YELLOW}Checking preconditions...${NC}"
+
+if [[ ! -f "${CHART_FILE}" ]]; then
+  echo -e "${RED}Error: ${CHART_FILE} not found. Run from repo root.${NC}" >&2
+  exit 1
 fi
 
-# Update Chart.yaml
-echo -e "${YELLOW}Updating chart version to ${NEW_VERSION}...${NC}"
-sed -i '' "s/^version: .*/version: ${NEW_VERSION}/" chart/Chart.yaml
-
-# Update appVersion if needed
-CURRENT_APP_VERSION=$(grep '^appVersion:' chart/Chart.yaml | awk -F'"' '{print $2}')
-read -p "Update appVersion? (current: ${CURRENT_APP_VERSION}) [y/N] " -n 1 -r
-echo
-if [[ $REPLY =~ ^[Yy]$ ]]; then
-    read -p "Enter new appVersion: " NEW_APP_VERSION
-    sed -i '' "s/^appVersion: .*/appVersion: \"${NEW_APP_VERSION}\"/" chart/Chart.yaml
+ORIGINAL_BRANCH="$(git rev-parse --abbrev-ref HEAD)"
+if [[ "${ORIGINAL_BRANCH}" != "main" ]]; then
+  echo -e "${RED}Error: must be on 'main' branch (currently on '${ORIGINAL_BRANCH}').${NC}" >&2
+  exit 1
 fi
 
-# Run helm lint
-run_helm_lint
+if [[ -n "$(git status --porcelain)" ]]; then
+  echo -e "${RED}Error: working tree is not clean. Commit or stash changes first.${NC}" >&2
+  git status --short >&2
+  exit 1
+fi
 
-# Update documentation
-update_docs
+echo -e "${YELLOW}Fetching origin...${NC}"
+git fetch origin --quiet
+LOCAL_HEAD="$(git rev-parse @)"
+REMOTE_HEAD="$(git rev-parse @{u})"
+if [[ "${LOCAL_HEAD}" != "${REMOTE_HEAD}" ]]; then
+  echo -e "${RED}Error: local main is not in sync with origin/main.${NC}" >&2
+  echo "  local:  ${LOCAL_HEAD}" >&2
+  echo "  remote: ${REMOTE_HEAD}" >&2
+  exit 1
+fi
 
-# Show changes
-echo -e "${YELLOW}Changes to be committed:${NC}"
-git diff
+if ! command_exists helm; then
+  echo -e "${RED}Error: helm is not installed.${NC}" >&2
+  exit 1
+fi
 
-echo -e "\n${YELLOW}The following actions will be performed:${NC}"
-echo "1. Commit version ${NEW_VERSION} changes"
-echo "2. Create and push tag v${NEW_VERSION}"
-echo "3. Push changes to main branch"
+echo -e "${GREEN}✓ Preconditions OK${NC}"
 
-read -p "Proceed with release? [y/N] " -n 1 -r
+# ---------------------------------------------------------------------------
+# Read current version, prompt for new version
+# ---------------------------------------------------------------------------
+CURRENT_VERSION="$(grep '^version:' "${CHART_FILE}" | awk '{print $2}')"
+CURRENT_APP_VERSION="$(grep '^appVersion:' "${CHART_FILE}" | awk -F'"' '{print $2}')"
+
+echo -e "${YELLOW}Current chart version:    ${CURRENT_VERSION}${NC}"
+echo -e "${YELLOW}Current chart appVersion: ${CURRENT_APP_VERSION}${NC}"
+
+read -r -p "Enter new version (current: ${CURRENT_VERSION}): " NEW_VERSION
+
+if ! [[ "${NEW_VERSION}" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+  echo -e "${RED}Error: invalid version. Must match ^[0-9]+\\.[0-9]+\\.[0-9]+$ (no pre-release / build metadata).${NC}" >&2
+  exit 1
+fi
+
+# ---------------------------------------------------------------------------
+# Tag-uniqueness check
+# ---------------------------------------------------------------------------
+echo -e "${YELLOW}Checking that tag v${NEW_VERSION} does not already exist...${NC}"
+git fetch --tags origin --quiet
+if git rev-parse -q --verify "refs/tags/v${NEW_VERSION}" >/dev/null \
+   || git ls-remote --exit-code --tags origin "v${NEW_VERSION}" >/dev/null 2>&1; then
+  echo -e "${RED}Error: tag v${NEW_VERSION} already exists locally or on origin. Bump to a new version.${NC}" >&2
+  exit 1
+fi
+echo -e "${GREEN}✓ Tag v${NEW_VERSION} is available${NC}"
+
+# ---------------------------------------------------------------------------
+# Optional appVersion bump
+# ---------------------------------------------------------------------------
+NEW_APP_VERSION=""
+read -r -p "Update appVersion? (current: ${CURRENT_APP_VERSION}) [y/N] " -n 1 REPLY || true
 echo
-if [[ ! $REPLY =~ ^[Yy]$ ]]; then
-    echo -e "${YELLOW}Release cancelled. Cleaning up...${NC}"
-    git checkout -- chart/Chart.yaml
+if [[ "${REPLY}" =~ ^[Yy]$ ]]; then
+  read -r -p "Enter new appVersion: " NEW_APP_VERSION
+  if [[ -z "${NEW_APP_VERSION}" ]]; then
+    echo -e "${RED}Error: empty appVersion.${NC}" >&2
     exit 1
+  fi
 fi
 
-# Commit changes
-if [ "$DRY_RUN" = true ]; then
-    echo -e "${YELLOW}[DRY RUN] Would commit changes with message: chore: prepare for v${NEW_VERSION} release${NC}"
-    echo -e "${YELLOW}[DRY RUN] Would create and push tag: v${NEW_VERSION}${NC}"
-    echo -e "${YELLOW}[DRY RUN] Would push changes to remote${NC}"
-    echo -e "${GREEN}✓ Dry run complete. No changes were made.${NC}"
-    exit 0
+# ---------------------------------------------------------------------------
+# Choose work directory:
+#   - dry-run: an isolated git worktree at HEAD
+#   - real:   the current repo
+# ---------------------------------------------------------------------------
+WORK_DIR="$(pwd)"
+if [[ "${DRY_RUN}" == true ]]; then
+  DRYRUN_WORKTREE="$(pwd)/.release-dryrun-$$"
+  echo -e "${YELLOW}[dry-run] Creating isolated worktree at ${DRYRUN_WORKTREE}${NC}"
+  git worktree add --quiet --detach "${DRYRUN_WORKTREE}" HEAD
+  WORK_DIR="${DRYRUN_WORKTREE}"
+fi
+
+pushd "${WORK_DIR}" >/dev/null
+
+# ---------------------------------------------------------------------------
+# Bump Chart.yaml
+# ---------------------------------------------------------------------------
+echo -e "${YELLOW}Updating ${CHART_FILE} version to ${NEW_VERSION}...${NC}"
+sed_inplace "s/^version: .*/version: ${NEW_VERSION}/" "${CHART_FILE}"
+if [[ -n "${NEW_APP_VERSION}" ]]; then
+  echo -e "${YELLOW}Updating ${CHART_FILE} appVersion to ${NEW_APP_VERSION}...${NC}"
+  sed_inplace "s/^appVersion: .*/appVersion: \"${NEW_APP_VERSION}\"/" "${CHART_FILE}"
+fi
+
+# ---------------------------------------------------------------------------
+# Validate
+# ---------------------------------------------------------------------------
+echo -e "${YELLOW}Running helm lint...${NC}"
+helm lint "${CHART_DIR}/"
+
+echo -e "${YELLOW}Running helm template (default values)...${NC}"
+helm template release-check "${CHART_DIR}/" --debug >/dev/null
+
+echo -e "${YELLOW}Running helm template (all features enabled)...${NC}"
+helm template release-check "${CHART_DIR}/" --debug \
+  --set alertmanager.enabled=true \
+  --set rules.enabled=true \
+  --set lokiRules.enabled=true \
+  --set alertmanager.config.type=configmap \
+  --set rules.config.type=configmap \
+  --set lokiRules.config.type=configmap \
+  >/dev/null
+
+if command_exists ct; then
+  echo -e "${YELLOW}Running ct lint...${NC}"
+  ct lint --config "${CHART_DIR}/ct.yaml" --charts "${CHART_DIR}/"
 else
-    # Real run
-    echo -e "${YELLOW}Committing changes...${NC}"
-    git add chart/Chart.yaml chart/README.md
-    git commit -m "chore: prepare for v${NEW_VERSION} release"
-
-    # Create and push tag
-    echo -e "${YELLOW}Creating and pushing tag v${NEW_VERSION}...${NC}"
-    git tag -a "v${NEW_VERSION}" -m "Release v${NEW_VERSION}"
-
-    # Push changes
-    echo -e "${YELLOW}Pushing changes to remote...${NC}"
-    git push origin main
-    git push origin "v${NEW_VERSION}"
-    
-    # Update GitHub Pages
-    update_gh_pages
+  echo -e "${YELLOW}ct not on PATH; skipping ct lint (CI will still run it).${NC}"
 fi
 
-echo -e "\n${GREEN}✓ Release v${NEW_VERSION} has been initiated!${NC}"
-echo -e "${GREEN}✓ GitHub Pages has been updated with the new chart version${NC}"
-echo -e "${YELLOW}The new version is now available at:${NC}"
-echo "https://antnsn.github.io/mimir-sync/"
+echo -e "${GREEN}✓ Validation passed${NC}"
 
-# Instructions for GitHub release
-echo -e "\n${YELLOW}Next steps:${NC}"
-echo "1. Go to https://github.com/antnsn/mimir-sync/releases/new"
-echo "2. Select the v${NEW_VERSION} tag"
-# Check if we can use GitHub CLI to create the release
-if command -v gh &> /dev/null; then
-    read -p "Would you like to create a GitHub release now? [y/N] " -n 1 -r
-    echo
-    if [[ $REPLY =~ ^[Yy]$ ]]; then
-        echo -e "${YELLOW}Creating GitHub release...${NC}"
-        gh release create "v${NEW_VERSION}" -t "v${NEW_VERSION}" -F <(echo "Release v${NEW_VERSION} of Mimir Sync Helm chart")
-    fi
+# ---------------------------------------------------------------------------
+# helm-docs
+# ---------------------------------------------------------------------------
+ensure_helm_docs
+echo -e "${YELLOW}Regenerating ${CHART_README} with helm-docs ${HELM_DOCS_VERSION}...${NC}"
+helm-docs
+
+# ---------------------------------------------------------------------------
+# Diff
+# ---------------------------------------------------------------------------
+echo -e "${YELLOW}Diff to be committed:${NC}"
+git --no-pager diff -- "${CHART_FILE}" "${CHART_README}"
+
+# ---------------------------------------------------------------------------
+# /codex:review reminder + typed confirmation
+# ---------------------------------------------------------------------------
+cat <<'EOF'
+
+============================================================================
+REMINDER: per CLAUDE.md and .github/copilot-instructions.md, you must run
+/codex:review on this commit BEFORE answering 'proceed'. The script cannot
+enforce this — it is your responsibility.
+============================================================================
+EOF
+
+if [[ "${DRY_RUN}" == true ]]; then
+  echo -e "${GREEN}✓ Dry run complete. No changes were made to the working tree.${NC}"
+  popd >/dev/null
+  cleanup_worktree
+  exit 0
 fi
+
+read -r -p "Type 'proceed' to commit and push to main (anything else cancels): " CONFIRM
+if [[ "${CONFIRM}" != "proceed" ]]; then
+  echo -e "${YELLOW}Release cancelled. Reverting working-tree changes...${NC}"
+  git restore --staged "${CHART_FILE}" "${CHART_README}" 2>/dev/null || true
+  git checkout -- "${CHART_FILE}" "${CHART_README}"
+  popd >/dev/null
+  exit 1
+fi
+
+# ---------------------------------------------------------------------------
+# Commit & push
+# ---------------------------------------------------------------------------
+echo -e "${YELLOW}Committing release...${NC}"
+git add "${CHART_FILE}" "${CHART_README}"
+git commit \
+  -m "chore: prepare for v${NEW_VERSION} release" \
+  -m "Co-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>"
+
+echo -e "${YELLOW}Pushing to origin/main...${NC}"
+git push origin main
+
+popd >/dev/null
+
+cat <<EOF
+
+${GREEN}✓ Release commit pushed to main.${NC} The chart-releaser-action workflow will:
+  - tag v${NEW_VERSION}
+  - package the chart
+  - publish to gh-pages and Artifact Hub
+  - create a GitHub Release
+
+Watch progress with:
+  gh run watch
+  gh run list --workflow=release.yaml -L 1
+
+The new version will be available at:
+  https://antnsn.github.io/mimir-sync
+EOF

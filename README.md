@@ -39,74 +39,83 @@ This chart is also available on [![Artifact Hub](https://img.shields.io/endpoint
 
 ## Releasing a New Version
 
-### Using the Release Script (Recommended)
+Releases are driven by a single path: a version bump on `main`. The
+[`chart-releaser-action`](.github/workflows/release.yaml) workflow detects the
+new `version:` in `chart/Chart.yaml`, then tags `vX.Y.Z`, packages the chart,
+publishes it to the `gh-pages` branch and Artifact Hub, and creates the
+GitHub Release. **You do not create or push tags yourself.**
 
-We provide a release script that automates the entire release process:
+### `/codex:review` requirement
+
+Every commit that lands on `main` — including release commits — must have
+`/codex:review` run on it first. This is non-negotiable. The release script
+prints a reminder before committing, but cannot enforce it.
+
+### Using `scripts/release.sh` (recommended)
 
 ```bash
-# Make the script executable if it's not already
 chmod +x scripts/release.sh
-
-# Run the release script
+./scripts/release.sh --dry-run   # validate in an isolated worktree
 ./scripts/release.sh
 ```
 
-#### Dry Run Mode
+The script:
 
-To see what the script would do without making any changes:
+1. Checks preconditions: on `main`, clean working tree, in sync with
+   `origin/main`.
+2. Prompts for the new version. Validates strictly against
+   `^[0-9]+\.[0-9]+\.[0-9]+$` (no pre-release / build metadata).
+3. Verifies that `vX.Y.Z` does not already exist locally or on `origin`.
+4. Bumps `chart/Chart.yaml` `version` (and optionally `appVersion`).
+5. Runs `helm lint`, two `helm template` passes (defaults + all features
+   enabled), and `ct lint` if `ct` is on `PATH`.
+6. Runs `helm-docs` (pinned to `v1.14.2`, matching CI) to regenerate
+   `chart/README.md`.
+7. Shows the diff and prints the `/codex:review` reminder.
+8. Requires you to type `proceed` (not just `y`) to continue.
+9. Commits `chart/Chart.yaml` + `chart/README.md` with the
+   `Co-authored-by: Copilot` trailer and pushes to `main`.
+10. Prints `gh run watch` so you can follow the release workflow.
 
-```bash
-./scripts/release.sh --dry-run
-```
-
-This will show what would be committed, which tag would be created, and what would be pushed, without making any actual changes.
-
-#### What the Script Does
-
-1. Validates the new version number (must follow semantic versioning)
-2. Updates the chart version in `chart/Chart.yaml`
-3. Optionally updates the `appVersion` if requested
-4. Runs `helm lint` to validate the chart
-5. Updates the documentation using `helm-docs`
-6. Shows a diff of all changes
-7. Asks for confirmation before proceeding
-8. Commits the changes, creates an annotated tag, and pushes everything
+`--dry-run` performs the bump, validation, and helm-docs run inside an
+isolated `git worktree` rooted at `HEAD`, then tears the worktree down.
+Your real working tree is never modified.
 
 #### Prerequisites
 
-The script requires:
-- `git` - For version control operations
-- `helm` - For linting the chart
-- `go` - For installing `helm-docs` if not already installed
-- `helm-docs` - For generating documentation (will be installed automatically if needed)
+- `git`, `helm`, `bash` (script uses `set -euo pipefail`).
+- `go` — only required if `helm-docs` is missing; the script will then
+  install `github.com/norwoodj/helm-docs/cmd/helm-docs@v1.14.2` (the same
+  version used by CI).
+- Optional: `ct` for the chart-testing lint pass.
 
-### Manual Release Process
+### Manual flow
 
-If you prefer to do it manually:
+If you cannot run the script:
 
-1. **Update the chart version** in `chart/Chart.yaml` following [semantic versioning](https://semver.org/):
+1. From a clean `main`, edit `chart/Chart.yaml`:
    ```yaml
-   version: 1.0.0  # Update this version
-   appVersion: "1.0.0"  # Update if the app version changes
+   version: X.Y.Z
+   appVersion: "X.Y.Z"  # only if the underlying mal-sync image contract changed
    ```
-
-2. **Commit and push** the changes to the `main` branch:
+2. Validate:
    ```bash
-   git add chart/Chart.yaml
-   git commit -m "chore: prepare for vX.Y.Z release"
+   helm lint chart/
+   helm template release-check chart/ --debug >/dev/null
+   helm-docs   # pinned: go install github.com/norwoodj/helm-docs/cmd/helm-docs@v1.14.2
+   ```
+3. Run `/codex:review` on the staged change.
+4. Commit and push to `main`:
+   ```bash
+   git add chart/Chart.yaml chart/README.md
+   git commit -m "chore: prepare for vX.Y.Z release" \
+     -m "Co-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>"
    git push origin main
    ```
 
-3. **Create and push a new tag** which will trigger the release workflow:
-   ```bash
-   git tag -a vX.Y.Z -m "Release vX.Y.Z"
-   git push origin vX.Y.Z
-   ```
-
-The GitHub Actions workflow will automatically:
-- Package the chart
-- Update the Helm repository index
-- Publish the new version to the GitHub Pages site
+The `release.yaml` workflow handles tagging, packaging, gh-pages publication,
+and the GitHub Release. Watch with `gh run watch` or
+`gh run list --workflow=release.yaml -L 1`.
 
 ## Configuration
 
@@ -145,29 +154,6 @@ rules:
 2. Jobs are triggered when ConfigMaps/Secrets change (requires Reloader)
 3. Jobs use `grafana/mimirtool` to sync configurations
 4. Completed jobs are automatically cleaned up
-
-## Maintenance
-
-### Updating the Helm Chart
-
-When you make changes to the chart, follow these steps to update the Helm repository:
-
-1. Update the version in `chart/Chart.yaml`
-2. Package the chart and update the repository index:
-
-```bash
-# Package the chart
-helm package chart/ -d /tmp/helm-repo
-
-# Update the repository index
-cd /tmp/helm-repo
-helm repo index . --url https://antnsn.github.io/mimir-sync
-
-# Commit and push changes
-git add .
-git commit -m "Update chart to version X.Y.Z"
-git push
-```
 
 ## License
 
