@@ -86,18 +86,45 @@ sed_inplace() {
   fi
 }
 
+HELM_DOCS_BIN=""
 ensure_helm_docs() {
-  if command_exists helm-docs; then
+  # Always use a script-controlled, version-pinned helm-docs binary so that
+  # README output is byte-identical to CI (which pins ${HELM_DOCS_VERSION}).
+  # If a different helm-docs is on PATH, its formatting may diverge and cause
+  # the chart-releaser docs check / `git diff --exit-code` to fail.
+  local pinned_dir="${HOME}/.cache/mimir-sync/bin"
+  local pinned_path="${pinned_dir}/helm-docs"
+  if [[ -x "${pinned_path}" ]]; then
+    HELM_DOCS_BIN="${pinned_path}"
     return
   fi
-  echo -e "${YELLOW}helm-docs not found. Installing ${HELM_DOCS_VERSION}...${NC}"
-  if ! command_exists go; then
-    echo -e "${RED}Error: Go is required to install helm-docs.${NC}" >&2
-    exit 1
+  echo -e "${YELLOW}Installing helm-docs ${HELM_DOCS_VERSION} to ${pinned_path}...${NC}"
+  mkdir -p "${pinned_dir}"
+  local os arch tarball
+  os="$(uname -s)"
+  arch="$(uname -m)"
+  case "${os}_${arch}" in
+    Darwin_arm64)  tarball="helm-docs_${HELM_DOCS_VERSION#v}_Darwin_arm64.tar.gz" ;;
+    Darwin_x86_64) tarball="helm-docs_${HELM_DOCS_VERSION#v}_Darwin_x86_64.tar.gz" ;;
+    Linux_x86_64)  tarball="helm-docs_${HELM_DOCS_VERSION#v}_Linux_x86_64.tar.gz" ;;
+    Linux_aarch64) tarball="helm-docs_${HELM_DOCS_VERSION#v}_Linux_arm64.tar.gz" ;;
+    *)
+      echo -e "${RED}Error: unsupported OS/arch for helm-docs auto-install: ${os}_${arch}${NC}" >&2
+      return 1
+      ;;
+  esac
+  if ! command_exists curl; then
+    echo -e "${RED}Error: curl is required to download helm-docs.${NC}" >&2
+    return 1
   fi
-  GO111MODULE=on go install "github.com/norwoodj/helm-docs/cmd/helm-docs@${HELM_DOCS_VERSION}"
-  GOPATH_BIN="$(go env GOPATH)/bin"
-  export PATH="${GOPATH_BIN}:${PATH}"
+  local tmp
+  tmp="$(mktemp -d)"
+  curl -sSL -o "${tmp}/helm-docs.tgz" \
+    "https://github.com/norwoodj/helm-docs/releases/download/${HELM_DOCS_VERSION}/${tarball}"
+  tar -xzf "${tmp}/helm-docs.tgz" -C "${tmp}" helm-docs
+  install -m 0755 "${tmp}/helm-docs" "${pinned_path}"
+  rm -rf "${tmp}"
+  HELM_DOCS_BIN="${pinned_path}"
 }
 
 DRYRUN_WORKTREE=""
@@ -131,13 +158,12 @@ if [[ -n "$(git status --porcelain)" ]]; then
 fi
 
 echo -e "${YELLOW}Fetching origin...${NC}"
-git fetch origin --quiet
-LOCAL_HEAD="$(git rev-parse @)"
-REMOTE_HEAD="$(git rev-parse @{u})"
+git fetch origin main --quiet
+LOCAL_HEAD="$(git rev-parse HEAD)"
+REMOTE_HEAD="$(git rev-parse refs/remotes/origin/main)"
 if [[ "${LOCAL_HEAD}" != "${REMOTE_HEAD}" ]]; then
-  echo -e "${RED}Error: local main is not in sync with origin/main.${NC}" >&2
-  echo "  local:  ${LOCAL_HEAD}" >&2
-  echo "  remote: ${REMOTE_HEAD}" >&2
+  echo -e "${RED}Error: local main (${LOCAL_HEAD:0:7}) is not in sync with origin/main (${REMOTE_HEAD:0:7}).${NC}" >&2
+  echo -e "${YELLOW}Run 'git pull origin main' or 'git push origin main' as appropriate, then retry.${NC}" >&2
   exit 1
 fi
 
@@ -248,7 +274,7 @@ echo -e "${GREEN}✓ Validation passed${NC}"
 # ---------------------------------------------------------------------------
 ensure_helm_docs
 echo -e "${YELLOW}Regenerating ${CHART_README} with helm-docs ${HELM_DOCS_VERSION}...${NC}"
-helm-docs
+"${HELM_DOCS_BIN}"
 
 # ---------------------------------------------------------------------------
 # Diff
