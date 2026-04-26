@@ -57,7 +57,8 @@ jobs:
             "https://github.com/norwoodj/helm-docs/releases/download/v${HELM_DOCS_VERSION}/helm-docs_${HELM_DOCS_VERSION}_Linux_x86_64.tar.gz"
           tar -xzf /tmp/helm-docs.tgz -C /tmp helm-docs
           sudo install -m 0755 /tmp/helm-docs /usr/local/bin/helm-docs
-          helm-docs --version
+          # No version probe: helm-docs 1.14.2 has no --version flag; tar above
+          # already fails loudly if the binary is missing.
       - name: Run helm-docs
         run: |
           helm-docs

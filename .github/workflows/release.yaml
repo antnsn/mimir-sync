@@ -50,14 +50,17 @@ jobs:
             "https://github.com/norwoodj/helm-docs/releases/download/v${HELM_DOCS_VERSION}/helm-docs_${HELM_DOCS_VERSION}_Linux_x86_64.tar.gz"
           tar -xzf /tmp/helm-docs.tgz -C /tmp helm-docs
           sudo install -m 0755 /tmp/helm-docs /usr/local/bin/helm-docs
-          helm-docs --version
+          # No version probe: helm-docs 1.14.2 has no --version flag; tar above
+          # already fails loudly if the binary is missing.
 
       - name: Update Chart README
         working-directory: chart
-        env:
-          HELM_DOCS_FAIL_ON_DIFF: "false"
+        # The whole point of this step is to detect drift in chart/README.md
+        # so the next step can open a docs PR. We do NOT want to fail on diff;
+        # helm-docs 1.14.2 has no --fail-on-diff flag and silently ignores the
+        # config-file equivalent, so we simply run it bare.
         run: |
-          helm-docs --fail-on-diff=false
+          helm-docs
 
       - name: Detect README diff
         id: docs-diff
