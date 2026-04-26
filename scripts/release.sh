@@ -92,8 +92,10 @@ ensure_helm_docs() {
   # README output is byte-identical to CI (which pins ${HELM_DOCS_VERSION}).
   # If a different helm-docs is on PATH, its formatting may diverge and cause
   # the chart-releaser docs check / `git diff --exit-code` to fail.
+  # The cache path is keyed by version so bumping ${HELM_DOCS_VERSION} forces
+  # a fresh download instead of reusing a stale binary.
   local pinned_dir="${HOME}/.cache/mimir-sync/bin"
-  local pinned_path="${pinned_dir}/helm-docs"
+  local pinned_path="${pinned_dir}/helm-docs-${HELM_DOCS_VERSION}"
   if [[ -x "${pinned_path}" ]]; then
     HELM_DOCS_BIN="${pinned_path}"
     return
@@ -158,7 +160,11 @@ if [[ -n "$(git status --porcelain)" ]]; then
 fi
 
 echo -e "${YELLOW}Fetching origin...${NC}"
-git fetch origin main --quiet
+# Use the configured fetch refspec so refs/remotes/origin/main is updated.
+# `git fetch origin main` (with an explicit refspec) only updates FETCH_HEAD
+# and can leave the tracking ref stale, which would falsely pass the freshness
+# check below.
+git fetch origin --quiet
 LOCAL_HEAD="$(git rev-parse HEAD)"
 REMOTE_HEAD="$(git rev-parse refs/remotes/origin/main)"
 if [[ "${LOCAL_HEAD}" != "${REMOTE_HEAD}" ]]; then

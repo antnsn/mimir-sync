@@ -16,5 +16,10 @@ github-pages-branch: gh-pages
 # Skip existing packages (idempotent re-runs)
 skip-existing: true
 
+# Tag/release name template — use `v<version>` (e.g. v3.0.0) instead of the
+# default `<chart>-<version>` so released tags match conventional semver tags
+# referenced in our docs and external integrations.
+release-name-template: "v{{ .Version }}"
+
 # The commit message used when updating the index
 commit-message: "chore(helm): update chart index [skip ci]"

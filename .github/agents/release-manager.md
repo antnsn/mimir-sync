@@ -19,7 +19,7 @@ You own the release process for the **mimir-sync** Helm chart. Releases are **ma
 1. Confirm the target version with the user (semver, no leading `v` in `Chart.yaml`).
 2. Verify the working tree is on `main`, clean, and up to date with `origin/main`:
    ```bash
-   git status --porcelain && git rev-parse --abbrev-ref HEAD && git fetch origin main && git status -sb
+   git status --porcelain && git rev-parse --abbrev-ref HEAD && git fetch origin && git status -sb
    ```
 3. Run `./scripts/release.sh` (use `--dry-run` first when uncertain). Do NOT bypass it.
 4. If editing manually for any reason:
