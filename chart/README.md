@@ -40,6 +40,7 @@ A Helm chart for syncing Mimir and Loki configurations including alertmanager co
 | alertmanager.ttlSecondsAfterFinished | int | `3600` | Job .spec.ttlSecondsAfterFinished (auto-GC of completed jobs). |
 | commonAnnotations | object | `{}` | Common annotations applied to every resource rendered by this chart. Note: Reloader annotations on Jobs are merged with these. |
 | commonLabels | object | `{}` | Common labels applied to every resource rendered by this chart. |
+| containerSecurityContext | object | `{}` | Container-level securityContext applied to each Job container (toYaml'd as-is). Use this for fields like runAsNonRoot, allowPrivilegeEscalation, readOnlyRootFilesystem, capabilities. |
 | fullnameOverride | string | `""` | Override the fully qualified app name. |
 | image.pullPolicy | string | `"IfNotPresent"` | Image pull policy. |
 | image.repository | string | `"ghcr.io/antnsn/mal-sync"` | Image repository for the mal-sync wrapper around mimirtool/lokitool. |
@@ -95,7 +96,7 @@ A Helm chart for syncing Mimir and Loki configurations including alertmanager co
 | rules.tolerations | list | `[]` | Tolerations for the rules sync Job. |
 | rules.topologySpreadConstraints | list | `[]` | Topology spread constraints for the rules sync Job. |
 | rules.ttlSecondsAfterFinished | int | `3600` | Job .spec.ttlSecondsAfterFinished. |
-| securityContext | object | `{}` | Pod-level securityContext applied to all Job pods (toYaml'd as-is). |
+| securityContext | object | `{}` | Pod-level securityContext applied to all Job pods (toYaml'd as-is). Use this for pod-scope fields like fsGroup, runAsUser, supplementalGroups, fsGroupChangePolicy. |
 | serviceAccount.annotations | object | `{}` | Annotations to add to the ServiceAccount. |
 | serviceAccount.create | bool | `true` | Create a dedicated ServiceAccount. |
 | serviceAccount.name | string | `""` | Name of the ServiceAccount. If empty and create=true, a name is derived from the fullname template. |

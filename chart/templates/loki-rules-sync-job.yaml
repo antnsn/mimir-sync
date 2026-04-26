@@ -30,6 +30,10 @@ spec:
     spec:
       serviceAccountName: {{ include "mimir-sync.serviceAccountName" . }}
       restartPolicy: OnFailure
+      {{- with .Values.securityContext }}
+      securityContext:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
       {{- with .Values.lokiRules.imagePullSecrets }}
       imagePullSecrets:
         {{- toYaml . | nindent 8 }}
@@ -52,7 +56,7 @@ spec:
       {{- end }}
       containers:
         - name: loki-rules-sync
-          {{- with .Values.securityContext }}
+          {{- with .Values.containerSecurityContext }}
           securityContext:
             {{- toYaml . | nindent 12 }}
           {{- end }}

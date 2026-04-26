@@ -29,6 +29,10 @@ spec:
     spec:
       serviceAccountName: {{ include "mimir-sync.serviceAccountName" . }}
       restartPolicy: OnFailure
+      {{- with .Values.securityContext }}
+      securityContext:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
       {{- with .Values.alertmanager.imagePullSecrets }}
       imagePullSecrets:
         {{- toYaml . | nindent 8 }}
@@ -51,7 +55,7 @@ spec:
       {{- end }}
       containers:
         - name: alertmanager-sync
-          {{- with .Values.securityContext }}
+          {{- with .Values.containerSecurityContext }}
           securityContext:
             {{- toYaml . | nindent 12 }}
           {{- end }}

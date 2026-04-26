@@ -24,7 +24,14 @@ image:
   pullPolicy: IfNotPresent
 
 # -- Pod-level securityContext applied to all Job pods (toYaml'd as-is).
+# Use this for pod-scope fields like fsGroup, runAsUser, supplementalGroups,
+# fsGroupChangePolicy.
 securityContext: {}
+
+# -- Container-level securityContext applied to each Job container (toYaml'd
+# as-is). Use this for fields like runAsNonRoot, allowPrivilegeEscalation,
+# readOnlyRootFilesystem, capabilities.
+containerSecurityContext: {}
 
 # RBAC configuration. The Jobs themselves do NOT call the Kubernetes API; this
 # is opt-in for setups that wire Reloader (or similar) to use this SA to watch
