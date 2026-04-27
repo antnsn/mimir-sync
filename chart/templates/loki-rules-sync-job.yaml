@@ -72,7 +72,6 @@ spec:
             - --rules.path={{ $rulesPath }}
             - --loki.address={{ .Values.loki.address }}
             - --loki.org-id={{ .Values.loki.tenantId }}
-            - --rules.namespace={{ .Values.namespaces.loki }}
             {{- if .Values.lokiRules.syncTempDir }}
             - --temp.dir={{ .Values.lokiRules.syncTempDir }}
             {{- end }}

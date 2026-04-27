@@ -85,12 +85,12 @@ loki:
     # -- Key inside the Secret that holds the password.
     key: ""
 
-# Namespaces in which rules are loaded into Mimir/Loki (not Kubernetes namespaces).
+# Mimir rule namespace (the logical Mimir API namespace, not a Kubernetes one)
+# applied to the Mimir rules sync. Loki has no rule-namespace concept in
+# mal-sync's loki-rules subcommand, so there is no `loki:` sub-key here.
 namespaces:
   # -- Mimir rules namespace (--rules.namespace for mimir-rules).
   mimir: default
-  # -- Loki rules namespace (--rules.namespace for loki-rules).
-  loki: default
 
 # Alertmanager sync configuration.
 alertmanager:

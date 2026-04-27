@@ -1,6 +1,6 @@
 # mimir-sync
 
-![Version: 3.0.1](https://img.shields.io/badge/Version-3.0.1-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 3.0.0](https://img.shields.io/badge/AppVersion-3.0.0-informational?style=flat-square)
+![Version: 3.0.2](https://img.shields.io/badge/Version-3.0.2-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 3.0.0](https://img.shields.io/badge/AppVersion-3.0.0-informational?style=flat-square)
 
 A Helm chart for syncing Mimir and Loki configurations including alertmanager config and rules
 
@@ -75,7 +75,6 @@ A Helm chart for syncing Mimir and Loki configurations including alertmanager co
 | mimir.tenantId | string | `"anonymous"` | Mimir tenant ID (X-Scope-OrgID). |
 | mimir.user | string | `""` | Optional Mimir basic-auth username. |
 | nameOverride | string | `""` | Override the chart name (defaults to .Chart.Name). |
-| namespaces.loki | string | `"default"` | Loki rules namespace (--rules.namespace for loki-rules). |
 | namespaces.mimir | string | `"default"` | Mimir rules namespace (--rules.namespace for mimir-rules). |
 | rbac.create | bool | `true` | Create namespace-scoped Role and RoleBinding granting read access to the ConfigMaps/Secrets this chart manages. Most users can leave this enabled. |
 | rules.affinity | object | `{}` | Affinity rules for the rules sync Job. |
