@@ -32,6 +32,35 @@ The Jobs run the `ghcr.io/antnsn/mal-sync` image (a wrapper around
 | `scripts/release.sh` | Interactive release helper (bump → validate → docs → commit → push `main`; `chart-releaser-action` handles tag, gh-pages, GitHub Release). |
 | `.github/agents/` | Custom Copilot CLI subagents scoped to this repo. |
 
+## Sibling repository: `mal-sync`
+
+We **own** the upstream binary too. Source lives at:
+
+- Local checkout: `/Users/marius/repo/antnsn/mal-sync`
+- GitHub: `antnsn/mal-sync` → image `ghcr.io/antnsn/mal-sync`
+- Subcommands: `alertmanager`, `mimir-rules`, `loki-rules`. Wraps
+  `mimirtool` / `lokitool`.
+
+**You may modify `mal-sync` directly** when a bug reported against this chart
+is actually rooted in the binary's CLI surface (e.g. flag mismatches, missing
+flags, incorrect `mimirtool` / `lokitool` invocation). Don't paper over a
+binary bug with a chart workaround if fixing the binary is cleaner.
+
+When you fix a `mal-sync` bug:
+
+1. Commit + tag (`vX.Y.Z`) in the `mal-sync` repo. CI workflow
+   `.github/workflows/docker-publish.yml` builds and publishes the image to
+   `ghcr.io/antnsn/mal-sync:vX.Y.Z` on tag push.
+2. Run `codex review --commit <SHA>` on the `mal-sync` commit too.
+3. Bump the chart's `appVersion` in `chart/Chart.yaml` to the new image tag,
+   then cut a chart release through the normal flow below.
+4. Cross-reference the chart commit and the binary commit in both PR/issue
+   bodies so the fix is traceable from either side.
+
+If a chart-side workaround is genuinely the right call (e.g. the binary
+behaviour is correct and the chart was simply emitting a wrong flag), say so
+explicitly in the commit message and skip the binary change.
+
 ## Hard rules
 
 1. **Mandatory `/codex:review` before every push.** Every commit you intend to

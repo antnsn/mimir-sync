@@ -32,6 +32,28 @@ Reloader annotations on the Jobs trigger re-syncs when the source changes.
 - `.github/workflows/` — CI; see Releasing below.
 - `scripts/release.sh` — interactive release helper.
 
+## Sibling repo: `mal-sync` (we own it, you can fix it)
+
+The image this chart runs (`ghcr.io/antnsn/mal-sync`) is built from
+`antnsn/mal-sync`, checked out locally at `/Users/marius/repo/antnsn/mal-sync`.
+It is **our** code — feel free to fix bugs there directly when the root cause
+is in the binary (e.g. wrong CLI flag name, missing flag, incorrect
+`mimirtool`/`lokitool` invocation) rather than monkey-patching the chart.
+
+Workflow when the fix lives in `mal-sync`:
+
+1. Edit, build/test (`go build ./...`, `go test ./...`), commit.
+2. `codex review --commit <SHA>` (same `/codex:review` mandate as this repo).
+3. Tag `vX.Y.Z` and push — `.github/workflows/docker-publish.yml` builds and
+   publishes `ghcr.io/antnsn/mal-sync:vX.Y.Z`.
+4. Back in this repo, bump `appVersion` in `chart/Chart.yaml` to the new tag
+   and cut a chart release through the normal flow.
+5. Reference both commits/tags from any related issue or PR body.
+
+Choose the chart-side fix only when the binary's behaviour is actually
+correct. When in doubt, prefer fixing `mal-sync` — paving over a binary bug
+in templates leaves the next user with the same problem.
+
 ## Non-negotiable rules
 
 1. **`/codex:review` before every push.** Every commit you create — feature,
