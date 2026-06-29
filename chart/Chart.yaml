@@ -2,8 +2,8 @@ apiVersion: v2
 name: mimir-sync
 description: A Helm chart for syncing Mimir and Loki configurations including alertmanager config and rules
 type: application
-version: 3.0.2
-appVersion: "3.0.0"
+version: 3.0.3
+appVersion: "v1.0.5"
 
 # A list of keywords as strings
 keywords:
