@@ -21,45 +21,23 @@ metadata:
 spec:
   backoffLimit: {{ .Values.rules.backoffLimit }}
   ttlSecondsAfterFinished: {{ .Values.rules.ttlSecondsAfterFinished }}
+  {{- with .Values.rules.activeDeadlineSeconds }}
+  activeDeadlineSeconds: {{ . }}
+  {{- end }}
   template:
     metadata:
       labels:
         {{- include "mimir-sync.selectorLabels" . | nindent 8 }}
         app.kubernetes.io/component: rules-sync
     spec:
-      serviceAccountName: {{ include "mimir-sync.serviceAccountName" . }}
-      restartPolicy: OnFailure
-      {{- with .Values.securityContext }}
-      securityContext:
-        {{- toYaml . | nindent 8 }}
-      {{- end }}
-      {{- with .Values.rules.imagePullSecrets }}
-      imagePullSecrets:
-        {{- toYaml . | nindent 8 }}
-      {{- end }}
-      {{- with .Values.rules.nodeSelector }}
-      nodeSelector:
-        {{- toYaml . | nindent 8 }}
-      {{- end }}
-      {{- with .Values.rules.affinity }}
-      affinity:
-        {{- toYaml . | nindent 8 }}
-      {{- end }}
-      {{- with .Values.rules.tolerations }}
-      tolerations:
-        {{- toYaml . | nindent 8 }}
-      {{- end }}
-      {{- with .Values.rules.topologySpreadConstraints }}
-      topologySpreadConstraints:
-        {{- toYaml . | nindent 8 }}
-      {{- end }}
+      {{- include "mimir-sync.podScheduling" (dict "ctx" . "feature" .Values.rules) | nindent 6 }}
       containers:
         - name: rules-sync
           {{- with .Values.containerSecurityContext }}
           securityContext:
             {{- toYaml . | nindent 12 }}
           {{- end }}
-          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          image: "{{ include "mimir-sync.image" . }}"
           imagePullPolicy: {{ .Values.image.pullPolicy | quote }}
           {{- with .Values.rules.resources }}
           resources:
@@ -76,24 +54,7 @@ spec:
             - --temp.dir={{ .Values.rules.syncTempDir }}
             {{- end }}
           env:
-            - name: MIMIR_ADDRESS
-              value: {{ .Values.mimir.address | quote }}
-            - name: MIMIR_TENANT_ID
-              value: {{ .Values.mimir.tenantId | quote }}
-            {{- if .Values.mimir.user }}
-            - name: MIMIR_USER
-              value: {{ .Values.mimir.user | quote }}
-            {{- end }}
-            {{- if .Values.mimir.existingSecret.name }}
-            - name: MIMIR_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: {{ .Values.mimir.existingSecret.name }}
-                  key: {{ .Values.mimir.existingSecret.key }}
-            {{- else if .Values.mimir.password }}
-            - name: MIMIR_PASSWORD
-              value: {{ .Values.mimir.password | quote }}
-            {{- end }}
+            {{- include "mimir-sync.mimirEnv" . | nindent 12 }}
             {{- with .Values.rules.extraEnv }}
             {{- toYaml . | nindent 12 }}
             {{- end }}

@@ -1,0 +1,24 @@
+name: Setup helm-docs
+description: Install a pinned helm-docs binary onto the runner.
+
+inputs:
+  version:
+    description: helm-docs release version, without the leading "v".
+    required: false
+    default: "1.14.2"
+
+runs:
+  using: composite
+  steps:
+    - name: Install helm-docs
+      shell: bash
+      env:
+        HELM_DOCS_VERSION: ${{ inputs.version }}
+      run: |
+        set -euo pipefail
+        curl -sSL -o /tmp/helm-docs.tgz \
+          "https://github.com/norwoodj/helm-docs/releases/download/v${HELM_DOCS_VERSION}/helm-docs_${HELM_DOCS_VERSION}_Linux_x86_64.tar.gz"
+        tar -xzf /tmp/helm-docs.tgz -C /tmp helm-docs
+        sudo install -m 0755 /tmp/helm-docs /usr/local/bin/helm-docs
+        # No version probe: helm-docs 1.14.2 has no --version flag; the tar
+        # extraction above already fails loudly if the binary is missing.

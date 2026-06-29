@@ -1,6 +1,6 @@
 # mimir-sync
 
-![Version: 3.0.3](https://img.shields.io/badge/Version-3.0.3-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: v1.0.5](https://img.shields.io/badge/AppVersion-v1.0.5-informational?style=flat-square)
+![Version: 3.1.0](https://img.shields.io/badge/Version-3.1.0-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: v1.0.5](https://img.shields.io/badge/AppVersion-v1.0.5-informational?style=flat-square)
 
 A Helm chart for syncing Mimir and Loki configurations including alertmanager config and rules
 
@@ -20,6 +20,7 @@ A Helm chart for syncing Mimir and Loki configurations including alertmanager co
 
 | Key | Type | Default | Description |
 |-----|------|---------|-------------|
+| alertmanager.activeDeadlineSeconds | string | `""` | Job .spec.activeDeadlineSeconds. Caps the wall-clock runtime of a sync attempt so a hung mimirtool/lokitool (e.g. unreachable backend) cannot run forever. Empty = unset. |
 | alertmanager.affinity | object | `{}` | Affinity rules for the alertmanager sync Job. |
 | alertmanager.backoffLimit | int | `2` | Job .spec.backoffLimit. |
 | alertmanager.config.existingName | string | `""` | Use an existing ConfigMap/Secret instead of letting the chart create one. |
@@ -51,6 +52,7 @@ A Helm chart for syncing Mimir and Loki configurations including alertmanager co
 | loki.password | string | `""` | Optional Loki basic-auth password. Prefer existingSecret in production. |
 | loki.tenantId | string | `"anonymous"` | Loki tenant ID (X-Scope-OrgID). |
 | loki.user | string | `""` | Optional Loki basic-auth username. |
+| lokiRules.activeDeadlineSeconds | string | `""` | Job .spec.activeDeadlineSeconds. Caps the wall-clock runtime of a sync attempt so a hung mimirtool/lokitool (e.g. unreachable backend) cannot run forever. Empty = unset. |
 | lokiRules.affinity | object | `{}` | Affinity rules for the loki-rules sync Job. |
 | lokiRules.backoffLimit | int | `2` | Job .spec.backoffLimit. |
 | lokiRules.config.existingName | string | `""` | Use an existing ConfigMap/Secret instead of letting the chart create one. |
@@ -77,6 +79,7 @@ A Helm chart for syncing Mimir and Loki configurations including alertmanager co
 | nameOverride | string | `""` | Override the chart name (defaults to .Chart.Name). |
 | namespaces.mimir | string | `"default"` | Mimir rules namespace (--rules.namespace for mimir-rules). |
 | rbac.create | bool | `true` | Create namespace-scoped Role and RoleBinding granting read access to the ConfigMaps/Secrets this chart manages. Most users can leave this enabled. |
+| rules.activeDeadlineSeconds | string | `""` | Job .spec.activeDeadlineSeconds. Caps the wall-clock runtime of a sync attempt so a hung mimirtool/lokitool (e.g. unreachable backend) cannot run forever. Empty = unset. |
 | rules.affinity | object | `{}` | Affinity rules for the rules sync Job. |
 | rules.backoffLimit | int | `2` | Job .spec.backoffLimit. |
 | rules.config.existingName | string | `""` | Use an existing ConfigMap/Secret instead of letting the chart create one. |
