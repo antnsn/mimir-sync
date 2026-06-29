@@ -6,6 +6,10 @@ permissions: {}
 
 on: pull_request
 
+concurrency:
+  group: superlinter-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   super-linter:
     name: Lint Code Base
@@ -50,15 +54,7 @@ jobs:
         with:
           fetch-depth: 0
       - name: Install helm-docs
-        run: |
-          set -euo pipefail
-          HELM_DOCS_VERSION=1.14.2
-          curl -sSL -o /tmp/helm-docs.tgz \
-            "https://github.com/norwoodj/helm-docs/releases/download/v${HELM_DOCS_VERSION}/helm-docs_${HELM_DOCS_VERSION}_Linux_x86_64.tar.gz"
-          tar -xzf /tmp/helm-docs.tgz -C /tmp helm-docs
-          sudo install -m 0755 /tmp/helm-docs /usr/local/bin/helm-docs
-          # No version probe: helm-docs 1.14.2 has no --version flag; tar above
-          # already fails loudly if the binary is missing.
+        uses: ./.github/actions/setup-helm-docs
       - name: Run helm-docs
         run: |
           helm-docs

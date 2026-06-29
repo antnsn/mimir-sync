@@ -140,6 +140,9 @@ alertmanager:
   backoffLimit: 2
   # -- Job .spec.ttlSecondsAfterFinished (auto-GC of completed jobs).
   ttlSecondsAfterFinished: 3600
+  # -- Job .spec.activeDeadlineSeconds. Caps the wall-clock runtime of a sync attempt
+  # so a hung mimirtool/lokitool (e.g. unreachable backend) cannot run forever. Empty = unset.
+  activeDeadlineSeconds: ""
 
 # Mimir rules sync configuration.
 rules:
@@ -201,6 +204,9 @@ rules:
   backoffLimit: 2
   # -- Job .spec.ttlSecondsAfterFinished.
   ttlSecondsAfterFinished: 3600
+  # -- Job .spec.activeDeadlineSeconds. Caps the wall-clock runtime of a sync attempt
+  # so a hung mimirtool/lokitool (e.g. unreachable backend) cannot run forever. Empty = unset.
+  activeDeadlineSeconds: ""
 
 # Loki rules sync configuration.
 lokiRules:
@@ -249,3 +255,6 @@ lokiRules:
   backoffLimit: 2
   # -- Job .spec.ttlSecondsAfterFinished.
   ttlSecondsAfterFinished: 3600
+  # -- Job .spec.activeDeadlineSeconds. Caps the wall-clock runtime of a sync attempt
+  # so a hung mimirtool/lokitool (e.g. unreachable backend) cannot run forever. Empty = unset.
+  activeDeadlineSeconds: ""

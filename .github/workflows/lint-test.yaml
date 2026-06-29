@@ -6,6 +6,10 @@ on:
       - "chart/**"
       - ".github/workflows/*.y*ml"
 
+concurrency:
+  group: lint-test-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   build:
     name: lint, install
@@ -26,15 +30,7 @@ jobs:
         uses: helm/chart-testing-action@6ec842c01de15ebb84c8627d2744a0c2f2755c9f # v2.8.0
 
       - name: Install helm-docs
-        run: |
-          set -euo pipefail
-          HELM_DOCS_VERSION=1.14.2
-          curl -sSL -o /tmp/helm-docs.tgz \
-            "https://github.com/norwoodj/helm-docs/releases/download/v${HELM_DOCS_VERSION}/helm-docs_${HELM_DOCS_VERSION}_Linux_x86_64.tar.gz"
-          tar -xzf /tmp/helm-docs.tgz -C /tmp helm-docs
-          sudo install -m 0755 /tmp/helm-docs /usr/local/bin/helm-docs
-          # No version probe: helm-docs 1.14.2 has no --version flag; tar above
-          # already fails loudly if the binary is missing.
+        uses: ./.github/actions/setup-helm-docs
 
       - name: Run helm-docs check
         working-directory: chart
